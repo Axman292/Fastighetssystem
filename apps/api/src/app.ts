@@ -17,6 +17,7 @@ import { UsersController } from './users/users.controller';
 import { CustomersController } from './customers/customers.controller';
 import { ContractsController } from './contracts/contracts.controller';
 import { KpiController } from './contracts/kpi.controller';
+import { ImportCenterController } from './imports/import-center.controller';
 import { BillingRunsController } from './billing/billing-runs.controller';
 import { InvoicesController, PaymentsController } from './billing/invoices.controller';
 import { ChargesController } from './billing/charges.controller';
@@ -35,6 +36,7 @@ import { ChargesController } from './billing/charges.controller';
     CustomersController,
     ContractsController,
     KpiController,
+    ImportCenterController,
     ChargesController,
     BillingRunsController,
     InvoicesController,
