@@ -14,6 +14,9 @@ import { PropertiesController } from './properties/properties.controller';
 import { ObjectsController } from './properties/objects.controller';
 import { ImportController } from './properties/import.controller';
 import { UsersController } from './users/users.controller';
+import { CustomersController } from './customers/customers.controller';
+import { ContractsController } from './contracts/contracts.controller';
+import { KpiController } from './contracts/kpi.controller';
 
 @Module({
   controllers: [
@@ -26,6 +29,9 @@ import { UsersController } from './users/users.controller';
     PropertiesController,
     ObjectsController,
     ImportController,
+    CustomersController,
+    ContractsController,
+    KpiController,
   ],
   providers: [
     AuthService,

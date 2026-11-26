@@ -62,3 +62,62 @@ export const OBJECT_TYPE_LABEL: Record<string, string> = {
 };
 
 export const RESIDENTIAL_TYPES = new Set(['apartment', 'hotel_apartment']);
+
+export const CONTRACT_TYPE_LABEL: Record<string, string> = {
+  residential: 'Bostad',
+  commercial: 'Lokal',
+  parking: 'Parkering',
+  storage: 'Förråd',
+  other: 'Övrigt',
+};
+
+type Tone = 'neutral' | 'good' | 'warn' | 'bad' | 'accent';
+
+/** Status som visas för ett avtal, med hänsyn till datum. */
+export function contractStatus(c: { status: string; startDate: string; endDate: string | null }): { label: string; tone: Tone } {
+  const today = new Date().toISOString().slice(0, 10);
+  if (c.status === 'draft') return { label: 'Utkast', tone: 'neutral' };
+  if (c.status === 'cancelled') return { label: 'Makulerat', tone: 'neutral' };
+  if (c.endDate && c.endDate < today) return { label: 'Avslutat', tone: 'neutral' };
+  if (c.startDate > today) return { label: 'Kommande', tone: 'accent' };
+  if (c.status === 'terminated') return { label: 'Uppsagt', tone: 'warn' };
+  return { label: 'Aktivt', tone: 'good' };
+}
+
+export const OBJECT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  occupied: { label: 'Uthyrd', tone: 'good' },
+  notice: { label: 'Uppsagd', tone: 'warn' },
+  upcoming: { label: 'Kommande', tone: 'accent' },
+  vacant: { label: 'Vakant', tone: 'bad' },
+  inactive: { label: 'Inaktiv', tone: 'neutral' },
+};
+
+export const ARTICLE_LABEL: Record<string, string> = {
+  rent: 'Hyra',
+  heating: 'Värme',
+  electricity: 'El',
+  water: 'Vatten',
+  parking: 'Parkering',
+  storage: 'Förråd',
+  service: 'Tjänst',
+  index: 'Indextillägg',
+  discount: 'Rabatt',
+  other: 'Övrigt',
+};
+
+export const VAT_LABEL: Record<string, string> = { '0': 'Momsfri', '600': '6 %', '1200': '12 %', '2500': '25 %' };
+
+export const DEPOSIT_LABEL: Record<string, string> = {
+  deposit: 'Deposition',
+  bank_guarantee: 'Bankgaranti',
+  surety: 'Borgen',
+  other: 'Annan säkerhet',
+};
+
+export const DELIVERY_LABEL: Record<string, string> = { email: 'E-post', post: 'Brev', e_invoice: 'E-faktura (Peppol)' };
+
+export const MONTH_LABEL = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
+
+export function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}

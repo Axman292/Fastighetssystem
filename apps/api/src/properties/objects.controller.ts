@@ -26,12 +26,17 @@ const LIST_SQL = `
          p.name as "propertyName", p.designation, o.object_nr as "objectNr", o.type,
          o.area_m2::float as "areaM2", o.rooms::float as rooms, o.floor, o.apartment_nr as "apartmentNr",
          o.address_line as "addressLine", o.active,
-         cur.monthly_rent_ore::float as "monthlyRentOre", cur.vat_liable as "vatLiable"
+         cur.monthly_rent_ore::float as "monthlyRentOre", cur.vat_liable as "vatLiable",
+         st.status, st.current_contract_id as "currentContractId", st.current_until::text as "currentUntil",
+         st.next_contract_id as "nextContractId", st.next_from::text as "nextFrom",
+         (select cu.name from contract k join customer cu on cu.id = k.customer_id
+            where k.id = coalesce(st.current_contract_id, st.next_contract_id)) as "tenantName"
   from rental_object o
   join property p on p.id = o.property_id
   join company c on c.id = o.company_id
   left join rental_object_current cur on cur.object_id = o.id
-  where ($1::uuid is null or o.property_id = $1)
+  left join rental_object_status st on st.object_id = o.id
+  where ($4::uuid is null or o.id = $4) and ($5::text is null or st.status = $5) and ($1::uuid is null or o.property_id = $1)
     and ($2::text is null or o.type = $2)
     and ($3::text is null or o.object_nr ilike '%' || $3 || '%' or o.address_line ilike '%' || $3 || '%'
          or p.name ilike '%' || $3 || '%')
@@ -45,12 +50,13 @@ export class ObjectsController {
     @Query('propertyId') propertyId?: string,
     @Query('type') type?: string,
     @Query('q') q?: string,
+    @Query('status') status?: string,
   ) {
     if (propertyId && !/^[0-9a-f-]{36}$/i.test(propertyId)) throw new BadRequestException('Ogiltig fastighet');
     // När en fastighet anges får alla bolag användaren har tillgång till läsas.
     const ids = propertyId ? ctx.access.map((a) => a.companyId) : undefined;
     return withContext(dbContext(ctx, ids), async (_db, client) =>
-      (await client.query(LIST_SQL, [propertyId ?? null, type || null, q?.trim() || null])).rows,
+      (await client.query(LIST_SQL, [propertyId ?? null, type || null, q?.trim() || null, null, status || null])).rows,
     );
   }
 
@@ -82,7 +88,7 @@ export class ObjectsController {
   @Get(':id')
   async get(@Ctx() ctx: RequestContext, @Param('id', ParseUUIDPipe) id: string) {
     return withContext(dbContext(ctx, ctx.access.map((a) => a.companyId)), async (db, client) => {
-      const { rows } = await client.query(`${LIST_SQL.replace('where (', 'where o.id = $4 and (')}`, [null, null, null, id]);
+      const { rows } = await client.query(LIST_SQL, [null, null, null, id, null]);
       if (!rows[0]) throw new NotFoundException('Objektet finns inte');
       const prices = await db
         .select()
