@@ -37,7 +37,13 @@ export class DbErrorsFilter implements ExceptionFilter {
       return;
     }
     if (code === '23P01') {
-      res.status(409).json({ message: 'Perioden överlappar en befintlig period' });
+      const table = (err as { table?: string }).table;
+      res.status(409).json({
+        message:
+          table === 'contract_object'
+            ? 'Objektet ingår redan i ett annat avtal under perioden'
+            : 'Perioden överlappar en befintlig period',
+      });
       return;
     }
     this.log.error(exception);

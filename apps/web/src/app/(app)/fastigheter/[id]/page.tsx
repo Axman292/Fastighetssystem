@@ -28,7 +28,7 @@ interface PropertyDetail {
   loansOre: number;
   taxValueSek: number | null;
   propertyTaxOre: number | null;
-  byType: { type: string; count: number; areaM2: number; monthlyRentOre: number }[];
+  byType: { type: string; count: number; areaM2: number; monthlyRentOre: number; occupied: number }[];
   [k: string]: unknown;
 }
 
@@ -64,6 +64,7 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
 
   const editable = can('property.write', p.companyId);
   const objectCount = p.byType.reduce((s, t) => s + t.count, 0);
+  const occupied = p.byType.reduce((s, t) => s + t.occupied, 0);
   const area = p.byType.reduce((s, t) => s + t.areaM2, 0);
   const rent = p.byType.reduce((s, t) => s + t.monthlyRentOre, 0);
   const ltv = p.valueSek ? p.loansOre / 100 / p.valueSek : null;
@@ -90,7 +91,11 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
       />
 
       <div className="mb-8 grid grid-cols-4 gap-3">
-        <Stat label="Uthyrningsbara objekt" value={objectCount} sub={fmtM2(area)} />
+        <Stat
+          label="Uthyrningsgrad"
+          value={objectCount ? fmtPct(occupied / objectCount) : '–'}
+          sub={`${occupied} av ${objectCount} objekt uthyrda · ${fmtM2(area)}`}
+        />
         <Stat label="Hyresvärde per år" value={fmtOre(yearlyRent)} sub={area ? `${fmtInt(yearlyRent / 100 / area)} kr/m²` : undefined} />
         <Stat label="Marknadsvärde" value={fmtMsek(p.valueSek)} sub={p.valuationDate ? `värderad ${p.valuationDate}` : 'ingen värdering'} />
         <Stat label="Belåning" value={fmtMsek(p.loansOre / 100)} sub={ltv !== null ? `belåningsgrad ${fmtPct(ltv)}` : undefined} />

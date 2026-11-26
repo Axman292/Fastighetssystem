@@ -6,7 +6,7 @@ import { FieldDef, FormDialog, FormFields, fromRow, toBody } from '@/components/
 import { Badge, Button, Card, ErrorNote, PageHeader, Stat, Table, Td } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { objectFields } from '@/lib/fields';
-import { OBJECT_TYPE_LABEL, RESIDENTIAL_TYPES, fmtInt, fmtM2, fmtNum, fmtOre } from '@/lib/format';
+import { OBJECT_STATUS, OBJECT_TYPE_LABEL, RESIDENTIAL_TYPES, fmtInt, fmtM2, fmtNum, fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
 interface ObjectDetail {
@@ -22,6 +22,12 @@ interface ObjectDetail {
   active: boolean;
   monthlyRentOre: number | null;
   vatLiable: boolean | null;
+  status: string | null;
+  currentContractId: string | null;
+  currentUntil: string | null;
+  nextContractId: string | null;
+  nextFrom: string | null;
+  tenantName: string | null;
   prices: { id: string; monthlyRentOre: number; validFrom: string; validTo: string | null; reason: string | null }[];
   vat: { id: string; vatLiable: boolean; validFrom: string; validTo: string | null; note: string | null }[];
   [k: string]: unknown;
@@ -72,6 +78,45 @@ export default function ObjectPage({ params }: { params: Promise<{ id: string }>
         description={`${o.propertyName} · ${o.designation} · ${o.companyName}`}
         actions={o.active ? <Badge tone="good">Aktivt</Badge> : <Badge>Inaktivt</Badge>}
       />
+      <Card className="mb-4 flex items-center gap-4 px-4 py-3 text-[13px]">
+        <Badge tone={OBJECT_STATUS[o.status ?? 'vacant'].tone}>{OBJECT_STATUS[o.status ?? 'vacant'].label}</Badge>
+        <div className="min-w-0 flex-1 text-ink-2">
+          {o.currentContractId ? (
+            <>
+              Uthyrd till <span className="font-medium text-ink">{o.tenantName}</span> enligt{' '}
+              <Link href={`/avtal/${o.currentContractId}`} className="text-accent hover:underline">
+                avtal
+              </Link>
+              {o.currentUntil ? `, upphör ${o.currentUntil}` : ', tills vidare'}.
+            </>
+          ) : o.nextContractId ? (
+            <>
+              Ledig. Nästa{' '}
+              <Link href={`/avtal/${o.nextContractId}`} className="text-accent hover:underline">
+                avtal
+              </Link>{' '}
+              börjar {o.nextFrom}.
+            </>
+          ) : (
+            'Objektet är ledigt.'
+          )}
+          {o.currentContractId && o.nextContractId && (
+            <>
+              {' '}
+              Nästa{' '}
+              <Link href={`/avtal/${o.nextContractId}`} className="text-accent hover:underline">
+                avtal
+              </Link>{' '}
+              börjar {o.nextFrom}.
+            </>
+          )}
+        </div>
+        {can('contract.write', o.companyId) && o.active && (!o.currentContractId || o.currentUntil) && !o.nextContractId && (
+          <Link href={`/avtal/nytt?objectId=${o.id}`}>
+            <Button size="sm">Nytt avtal</Button>
+          </Link>
+        )}
+      </Card>
       <div className="mb-8 grid grid-cols-4 gap-3">
         <Stat label="Månadshyra" value={fmtOre(o.monthlyRentOre)} sub="exkl. moms" />
         <Stat label="Årshyra" value={fmtOre(o.monthlyRentOre === null ? null : o.monthlyRentOre * 12)} />

@@ -7,7 +7,7 @@ import { FormDialog } from '@/components/form';
 import { Button, Card, PageHeader, Stat, Table, Td } from '@/components/ui';
 import { api } from '@/lib/api';
 import { propertyFields } from '@/lib/fields';
-import { CATEGORY_LABEL, fmtM2, fmtOre } from '@/lib/format';
+import { CATEGORY_LABEL, fmtM2, fmtOre, fmtPct } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
 interface PropertyListRow {
@@ -22,6 +22,8 @@ interface PropertyListRow {
   objectCount: number;
   objectAreaM2: number;
   monthlyRentOre: number;
+  occupiedCount: number;
+  vacantRentOre: number;
 }
 
 export default function PropertiesPage() {
@@ -35,8 +37,14 @@ export default function PropertiesPage() {
   }, [version]);
 
   const totals = (rows ?? []).reduce(
-    (t, r) => ({ objects: t.objects + r.objectCount, area: t.area + r.objectAreaM2, rent: t.rent + r.monthlyRentOre }),
-    { objects: 0, area: 0, rent: 0 },
+    (t, r) => ({
+      objects: t.objects + r.objectCount,
+      area: t.area + r.objectAreaM2,
+      rent: t.rent + r.monthlyRentOre,
+      occupied: t.occupied + r.occupiedCount,
+      vacant: t.vacant + r.vacantRentOre,
+    }),
+    { objects: 0, area: 0, rent: 0, occupied: 0, vacant: 0 },
   );
   const showCompany = !active;
 
@@ -58,8 +66,12 @@ export default function PropertiesPage() {
       />
       <div className="mb-6 grid grid-cols-4 gap-3">
         <Stat label="Fastigheter" value={rows?.length ?? '–'} />
-        <Stat label="Uthyrningsbara objekt" value={totals.objects} />
-        <Stat label="Uthyrningsbar area" value={fmtM2(totals.area)} />
+        <Stat label="Uthyrningsbara objekt" value={totals.objects} sub={fmtM2(totals.area)} />
+        <Stat
+          label="Uthyrningsgrad"
+          value={totals.objects ? fmtPct(totals.occupied / totals.objects) : '–'}
+          sub={totals.vacant ? `vakanser ${fmtOre(totals.vacant * 12)} per år` : 'inga vakanser'}
+        />
         <Stat label="Hyresvärde per år" value={fmtOre(totals.rent * 12)} sub={`${fmtOre(totals.rent)} per månad`} />
       </div>
       {rows && rows.length === 0 ? (
@@ -72,7 +84,7 @@ export default function PropertiesPage() {
           </p>
         </Card>
       ) : (
-        <Table head={['Fastighet', 'Beteckning', ...(showCompany ? ['Bolag'] : []), 'Kategori', 'Objekt', 'Area', 'Hyresvärde/mån']}>
+        <Table head={['Fastighet', 'Beteckning', ...(showCompany ? ['Bolag'] : []), 'Kategori', 'Objekt', 'Uthyrt', 'Area', 'Hyresvärde/mån']}>
           {rows?.map((r) => (
             <tr key={r.id} className="cursor-pointer hover:bg-subtle/60" onClick={() => router.push(`/fastigheter/${r.id}`)}>
               <Td className="font-medium">
@@ -83,6 +95,7 @@ export default function PropertiesPage() {
               {showCompany && <Td className="text-ink-2">{r.companyName}</Td>}
               <Td className="text-ink-2">{CATEGORY_LABEL[r.category]}</Td>
               <Td className="tabular">{r.objectCount}</Td>
+              <Td className="tabular text-ink-2">{r.objectCount ? fmtPct(r.occupiedCount / r.objectCount) : '–'}</Td>
               <Td className="tabular">{fmtM2(r.objectAreaM2)}</Td>
               <Td className="tabular">{fmtOre(r.monthlyRentOre)}</Td>
             </tr>

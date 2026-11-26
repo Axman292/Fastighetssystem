@@ -276,3 +276,148 @@ export const rentalObjectCurrent = pgView('rental_object_current', {
   monthlyRentOre: sek('monthly_rent_ore'),
   vatLiable: boolean('vat_liable'),
 }).existing();
+
+// ---------------------------------------------------------------------
+// Fas 3: kunder och avtal
+// ---------------------------------------------------------------------
+
+export const customer = pgTable('customer', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  customerNr: integer('customer_nr').notNull(),
+  kind: text('kind').notNull(),
+  name: text('name').notNull(),
+  nationalId: text('national_id'),
+  vatNr: text('vat_nr'),
+  email: text('email'),
+  phone: text('phone'),
+  addressLine: text('address_line'),
+  careOf: text('care_of'),
+  postalCode: text('postal_code'),
+  city: text('city'),
+  country: text('country').notNull().default('SE'),
+  invoiceAddressLine: text('invoice_address_line'),
+  invoiceCareOf: text('invoice_care_of'),
+  invoicePostalCode: text('invoice_postal_code'),
+  invoiceCity: text('invoice_city'),
+  invoiceReference: text('invoice_reference'),
+  deliveryMethod: text('delivery_method').notNull().default('email'),
+  peppolId: text('peppol_id'),
+  paymentTermsDays: smallint('payment_terms_days').notNull().default(30),
+  notes: text('notes'),
+  active: boolean('active').notNull().default(true),
+  ...audit,
+});
+
+export const customerContact = pgTable('customer_contact', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  customerId: uuid('customer_id').notNull(),
+  name: text('name').notNull(),
+  role: text('role'),
+  email: text('email'),
+  phone: text('phone'),
+  ...audit,
+});
+
+export const kpiValue = pgTable(
+  'kpi_value',
+  {
+    year: smallint('year').notNull(),
+    month: smallint('month').notNull(),
+    value: num('value').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid('created_by'),
+  },
+  (t) => [primaryKey({ columns: [t.year, t.month] })],
+);
+
+export const contract = pgTable('contract', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  contractNr: integer('contract_nr').notNull(),
+  type: text('type').notNull(),
+  customerId: uuid('customer_id').notNull(),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date'),
+  noticeMonths: smallint('notice_months').notNull().default(3),
+  extensionMonths: smallint('extension_months'),
+  billingInterval: text('billing_interval').notNull().default('month'),
+  billingInAdvance: boolean('billing_in_advance').notNull().default(true),
+  paymentTermsDays: smallint('payment_terms_days'),
+  status: text('status').notNull().default('draft'),
+  signedDate: date('signed_date'),
+  terminationReceived: date('termination_received'),
+  terminatedBy: text('terminated_by'),
+  terminationReason: text('termination_reason'),
+  renegotiateBy: date('renegotiate_by'),
+  specialTerms: text('special_terms'),
+  notes: text('notes'),
+  ...audit,
+});
+
+export const contractObject = pgTable('contract_object', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  contractId: uuid('contract_id').notNull(),
+  objectId: uuid('object_id').notNull(),
+  validFrom: date('valid_from').notNull(),
+  validTo: date('valid_to'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+});
+
+export const contractLine = pgTable('contract_line', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  contractId: uuid('contract_id').notNull(),
+  objectId: uuid('object_id'),
+  article: text('article').notNull(),
+  description: text('description').notNull(),
+  amountOre: sek('amount_ore').notNull(),
+  vatRateBp: integer('vat_rate_bp').notNull().default(0),
+  indexed: boolean('indexed').notNull().default(false),
+  baseAmountOre: sek('base_amount_ore'),
+  validFrom: date('valid_from').notNull(),
+  validTo: date('valid_to'),
+  reason: text('reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+});
+
+export const contractIndexClause = pgTable('contract_index_clause', {
+  contractId: uuid('contract_id').primaryKey(),
+  companyId: uuid('company_id').notNull(),
+  baseYear: smallint('base_year').notNull(),
+  baseMonth: smallint('base_month').notNull().default(10),
+  baseValue: num('base_value').notNull(),
+  sharePct: num('share_pct').notNull().default(100),
+  floorAtBase: boolean('floor_at_base').notNull().default(true),
+  adjustMonth: smallint('adjust_month').notNull().default(1),
+  lastAdjusted: date('last_adjusted'),
+  ...audit,
+});
+
+export const contractDeposit = pgTable('contract_deposit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  contractId: uuid('contract_id').notNull(),
+  kind: text('kind').notNull(),
+  amountOre: sek('amount_ore').notNull(),
+  dueDate: date('due_date'),
+  receivedDate: date('received_date'),
+  returnedDate: date('returned_date'),
+  note: text('note'),
+  ...audit,
+});
+
+export const contractEvent = pgTable('contract_event', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  contractId: uuid('contract_id').notNull(),
+  kind: text('kind').notNull(),
+  eventDate: date('event_date').notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+});

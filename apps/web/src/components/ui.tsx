@@ -16,7 +16,7 @@ export function Button({
     <button
       {...props}
       className={cx(
-        'inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50',
         size === 'sm' ? 'h-7 px-2.5 text-[13px]' : 'h-8 px-3 text-[13px]',
         variant === 'primary' && 'bg-accent text-white hover:bg-accent-hover',
         variant === 'secondary' && 'bg-surface text-ink shadow-card hover:bg-subtle',
@@ -82,7 +82,7 @@ export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'good
   return (
     <span
       className={cx(
-        'inline-flex h-5 items-center rounded px-1.5 text-[11.5px] font-medium',
+        'inline-flex h-5 items-center whitespace-nowrap rounded px-1.5 text-[11.5px] font-medium',
         tone === 'neutral' && 'bg-subtle text-ink-2',
         tone === 'good' && 'bg-good-soft text-good',
         tone === 'warn' && 'bg-warn-soft text-warn',

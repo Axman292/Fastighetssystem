@@ -52,11 +52,14 @@ const LIST_SQL = `
          p.area_boa_m2::float as "areaBoaM2", p.area_loa_m2::float as "areaLoaM2",
          count(o.id) filter (where o.active)::int as "objectCount",
          coalesce(sum(o.area_m2) filter (where o.active), 0)::float as "objectAreaM2",
-         coalesce(sum(cur.monthly_rent_ore) filter (where o.active), 0)::bigint::float as "monthlyRentOre"
+         coalesce(sum(cur.monthly_rent_ore) filter (where o.active), 0)::bigint::float as "monthlyRentOre",
+         count(o.id) filter (where st.status in ('occupied','notice'))::int as "occupiedCount",
+         coalesce(sum(cur.monthly_rent_ore) filter (where st.status in ('vacant','upcoming')), 0)::bigint::float as "vacantRentOre"
   from property p
   join company c on c.id = p.company_id
   left join rental_object o on o.property_id = p.id
   left join rental_object_current cur on cur.object_id = o.id
+  left join rental_object_status st on st.object_id = o.id
   group by p.id, c.name
   order by p.name`;
 
@@ -87,8 +90,10 @@ export class PropertiesController {
       const byType = (
         await client.query(
           `select o.type, count(*)::int as count, coalesce(sum(o.area_m2), 0)::float as "areaM2",
-                  coalesce(sum(cur.monthly_rent_ore), 0)::bigint::float as "monthlyRentOre"
+                  coalesce(sum(cur.monthly_rent_ore), 0)::bigint::float as "monthlyRentOre",
+                  count(*) filter (where st.status in ('occupied','notice'))::int as "occupied"
            from rental_object o left join rental_object_current cur on cur.object_id = o.id
+           left join rental_object_status st on st.object_id = o.id
            where o.property_id = $1 and o.active group by o.type order by o.type`,
           [id],
         )
