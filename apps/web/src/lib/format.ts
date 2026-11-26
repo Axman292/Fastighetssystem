@@ -105,6 +105,9 @@ export const ARTICLE_LABEL: Record<string, string> = {
   other: 'Övrigt',
 };
 
+/** Artiklar på fakturor och extra debiteringar (avgift finns inte på avtalsrader). */
+export const INVOICE_ARTICLE_LABEL: Record<string, string> = { ...ARTICLE_LABEL, fee: 'Avgift' };
+
 export const VAT_LABEL: Record<string, string> = { '0': 'Momsfri', '600': '6 %', '1200': '12 %', '2500': '25 %' };
 
 export const DEPOSIT_LABEL: Record<string, string> = {
@@ -120,4 +123,63 @@ export const MONTH_LABEL = ['januari', 'februari', 'mars', 'april', 'maj', 'juni
 
 export function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+export const INVOICE_KIND_LABEL: Record<string, string> = { rent_notice: 'Hyresavi', invoice: 'Faktura', credit_note: 'Kreditfaktura' };
+
+export const INVOICE_STATE: Record<string, { label: string; tone: Tone }> = {
+  draft: { label: 'Utkast', tone: 'neutral' },
+  unpaid: { label: 'Obetald', tone: 'accent' },
+  partially_paid: { label: 'Delbetald', tone: 'warn' },
+  overdue: { label: 'Förfallen', tone: 'bad' },
+  paid: { label: 'Betald', tone: 'good' },
+  overpaid: { label: 'Överbetald', tone: 'warn' },
+  credited: { label: 'Krediterad', tone: 'neutral' },
+  credit_note: { label: 'Kredit', tone: 'neutral' },
+};
+
+export const DELIVERY_STATUS: Record<string, { label: string; tone: Tone }> = {
+  queued: { label: 'Ej skickad', tone: 'neutral' },
+  sent: { label: 'Skickad', tone: 'good' },
+  test: { label: 'Testläge', tone: 'accent' },
+  failed: { label: 'Misslyckades', tone: 'bad' },
+};
+
+export const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  bankgiro: 'Bankgiro',
+  autogiro: 'Autogiro',
+  swish: 'Swish',
+  cash: 'Kontant',
+  other: 'Annat',
+};
+
+export const LINE_KIND_LABEL: Record<string, string> = {
+  regular: 'Hyra',
+  retroactive: 'Justering',
+  charge: 'Extra debitering',
+  manual: 'Manuell',
+  credit: 'Kredit',
+};
+
+/** "januari 2027" från ÅÅÅÅ-MM-DD eller ÅÅÅÅ-MM */
+export function fmtMonth(iso: string): string {
+  const [y, m] = iso.split('-').map(Number);
+  return `${MONTH_LABEL[m - 1]} ${y}`;
+}
+
+export function fmtPeriod(from: string | null, to: string | null): string {
+  if (!from || !to) return '';
+  const [fy, fm, fd] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  const end = new Date(Date.UTC(ty, tm, 0)).toISOString().slice(0, 10);
+  if (fd === 1 && to === end) {
+    if (fy === ty && fm === tm) return fmtMonth(from);
+    if (fy === ty && (fm - 1) % 3 === 0 && tm === fm + 2) return `kvartal ${(fm - 1) / 3 + 1} ${fy}`;
+    if (fy === ty) return `${MONTH_LABEL[fm - 1]}–${MONTH_LABEL[tm - 1]} ${fy}`;
+  }
+  return `${from} – ${to}`;
+}
+
+export function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date(iso));
 }

@@ -21,6 +21,7 @@ import {
   todayIso,
 } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { ContractBilling } from '@/components/contract-billing';
 
 interface Line {
   id: string;
@@ -497,6 +498,8 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
           </Card>
         </section>
       </div>
+
+      {!draft && <ContractBilling contract={k} canWrite={can('invoice.write', k.companyId)} onChange={load} />}
 
       <Dialogs
         dialog={dialog}

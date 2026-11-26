@@ -9,18 +9,20 @@ import { useSession } from '@/lib/session';
 
 /**
  * Startsidan: nyckeltal för fastigheter och uthyrning, avtal att hantera och bolagen.
- * Ekonominyckeltal fylls på när avisering och reskontra byggs.
+ * Aviserat och obetalt kommer från fakturorna.
  */
 export default function OverviewPage() {
   const { me, active, version } = useSession();
   const [companies, setCompanies] = useState<Company[] | null>(null);
   const [properties, setProperties] = useState<PropertyStats[] | null>(null);
   const [attention, setAttention] = useState<Attention[] | null>(null);
+  const [billing, setBilling] = useState<{ billedThisMonthOre: number; openOre: number; openCount: number; overdueOre: number } | null>(null);
 
   useEffect(() => {
     api<Company[]>('/companies').then(setCompanies);
     api<PropertyStats[]>('/properties').then(setProperties);
     api<Attention[]>('/contracts/attention').then(setAttention);
+    api<{ billedThisMonthOre: number; openOre: number; openCount: number; overdueOre: number }>('/invoices/summary').then(setBilling);
   }, [version]);
 
   const objects = properties?.reduce((s, p) => s + p.objectCount, 0) ?? 0;
@@ -39,8 +41,12 @@ export default function OverviewPage() {
         <Stat label="Hyresvärde per år" text={properties ? fmtOre(properties.reduce((s, p) => s + p.monthlyRentOre, 0) * 12) : undefined} />
         <Stat label="Uthyrningsgrad" text={properties ? (objects ? fmtPct(occupied / objects) : '–') : undefined} sub={properties ? `${occupied} av ${objects} objekt` : undefined} />
         <Stat label="Vakanser per år" text={properties ? fmtOre(vacantRent * 12) : undefined} sub="listhyra för lediga objekt" />
-        <Stat label="Aviserat denna månad" pending="Fas 4" />
-        <Stat label="Obetalda fakturor" pending="Fas 5" />
+        <Stat label="Aviserat denna månad" text={billing ? fmtOre(billing.billedThisMonthOre) : undefined} sub="hyresavier inkl. moms" />
+        <Stat
+          label="Obetalda fakturor"
+          text={billing ? fmtOre(billing.openOre) : undefined}
+          sub={billing ? (billing.overdueOre ? `varav ${fmtOre(billing.overdueOre)} förfallet` : `${billing.openCount} fakturor`) : undefined}
+        />
       </div>
 
       <div className="mb-3 mt-10 flex items-end justify-between">

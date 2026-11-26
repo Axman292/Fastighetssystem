@@ -25,6 +25,10 @@ const companyFields = {
   plusgiro: text.optional,
   fiscalYearStart: z.number().int().min(1).max(12).optional(),
   hogiaClientId: text.optional,
+  invoiceEmail: z.string().trim().email('Ogiltig e-postadress').nullable().optional().or(z.literal('').transform(() => null)),
+  fTax: z.boolean().optional(),
+  invoiceFooter: z.string().trim().max(500).nullable().optional(),
+  roundToKrona: z.boolean().optional(),
 };
 const createSchema = z.object(companyFields);
 const updateSchema = z.object(companyFields).partial().extend({ active: z.boolean().optional() });

@@ -2,7 +2,7 @@
 
 Affärssystem för fastighetsförvaltning: fastigheter, hyresobjekt, hyresgäster, avtal, avisering, ekonomi och koppling till Hogia Redovisning. Byggt för en koncern med flera fastighetsägande bolag.
 
-Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i sex faser. Fas 1 (grunden) och fas 2 (fastigheter och hyresobjekt) är klara.
+Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i sex faser. Fas 1–4 (grund, fastigheter, hyresgäster och avtal, avisering och fakturering) är klara.
 
 ## Vad som finns i fas 1
 
@@ -33,6 +33,25 @@ Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssyste
 - **Avtalsmallar och PDF** per avtalstyp, med parter, objekt, hyrestid, hyra och moms, indexklausul, säkerhet, villkor och underskrifter. Mallarna finns i `apps/api/src/contracts/contract-pdf.ts` och bör granskas mot bolagets egna villkor.
 - **Att hantera:** sista dag för uppsägning, avtal som förlängs eller upphör, omförhandlingar, utkast, aktiva avtal utan hyra och säkerheter som inte kommit in.
 - **Objektstatus** (uthyrd, uppsagd, kommande, vakant) räknas fram ur avtalen. Uthyrningsgrad och vakanser visas per fastighet och på översikten.
+
+## Vad som finns i fas 4
+
+- **Aviseringskörning.** Välj månad, fakturadatum och fastigheter. Systemet skapar en hyresavi per avtal ur avtalens hyresrader: månadsavtal för månaden, kvartalsavtal i kvartalets första månad, förskott eller efterskott. Hyra för del av månad räknas per dag. Förfallodag blir sista bankdagen före perioden (svenska helgdagar tas med), eller avtalets betalningsvillkor.
+- **Förhandsgranskning och kontroller** innan något låses: redan aviserade perioder, saknade aviseringar, avtal som fortfarande är utkast fast hyresgästen flyttat in, objekt som debiteras utan att ingå i avtalet, moms som inte stämmer med objektet eller hyresgästen, belopp som avviker från förra avin, saknad adress eller e-post och bolag utan bankgiro. Fel stoppar godkännandet, varningar måste bekräftas. Har avtalen ändrats sedan granskningen måste körningen granskas igen.
+- **Godkännande.** Avierna får fakturanummer i följd utan luckor och OCR-nummer med längd- och kontrollsiffra och låses.
+- **Retroaktiva justeringar.** Ändras hyran bakåt i tiden, eller avslutas ett avtal efter att perioden aviserats, räknas skillnaden fram och läggs på nästa avi. Blir beloppet negativt skapas en kreditfaktura.
+- **Extra debiteringar** på ett avtal (nycklar, skador, avgifter) följer med nästa avi.
+- **Manuella fakturor** (engångsfakturor) med valfria rader, koppling till avtal, objekt och kostnadsställe.
+- **Kreditfakturor** för hela eller delar av en faktura, med val om perioden ska aviseras på nytt.
+- **Betalningar** registreras manuellt, med delbetalning och överskjutande belopp. Inläsning av bankfiler (BgMax) kommer i fas 5.
+- **PDF** för varje avi och faktura, en samlad PDF för brevavier, **e-post** med PDF och **e-faktura** i Peppol BIS Billing 3.0.
+- **Spårbarhet.** Varje fakturarad bär bolag, fastighet, objekt, avtal, avtalsrad och kostnadsställe, så att en senare export till bokföringen kan göras utan dubbelposter.
+
+Databasen hindrar själv att samma avtalsrad aviseras två gånger för samma dag, att en extra debitering faktureras två gånger och att en utfärdad faktura ändras eller tas bort.
+
+### Utskick
+
+E-post skickas via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) är satt. Utan SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. E-faktura sparas på samma sätt som XML tills en Peppol-accesspunkt är ansluten.
 
 ## Struktur
 
@@ -76,4 +95,4 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 
 ## Nästa fas
 
-Fas 4: avisering och fakturering (hyresavier per månad eller kvartal ur avtalens rader, OCR, kontroll före utskick, e-post, brev och e-faktura).
+Fas 5: kundreskontra med inläsning av bankfiler (BgMax), påminnelser och dröjsmålsränta.
