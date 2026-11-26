@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { use, useCallback, useEffect, useState } from 'react';
 import { CrudTable } from '@/components/crud-table';
 import { FieldDef, FormDialog, FormFields, fromRow, toBody } from '@/components/form';
 import { ObjectTable } from '@/components/object-table';
+import { PropertyEconomy } from '@/components/property-economy';
 import { Badge, Button, Card, ErrorNote, PageHeader, Stat, Table, Tabs, Td } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { newObjectExtraFields, objectFields, propertyFields } from '@/lib/fields';
@@ -32,7 +33,7 @@ interface PropertyDetail {
   [k: string]: unknown;
 }
 
-type Tab = 'objekt' | 'uppgifter' | 'byggnader' | 'ekonomi' | 'teknik';
+type Tab = 'objekt' | 'resultat' | 'uppgifter' | 'byggnader' | 'ekonomi' | 'teknik';
 
 const technicalFields: FieldDef[] = [
   { key: 'heating', label: 'Uppvärmning', half: true, placeholder: 'Fjärrvärme' },
@@ -50,7 +51,8 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
   const router = useRouter();
   const [p, setP] = useState<PropertyDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('objekt');
+  const search = useSearchParams();
+  const [tab, setTab] = useState<Tab>(search.get('flik') === 'resultat' ? 'resultat' : 'objekt');
   const [objVersion, setObjVersion] = useState(0);
   const [addingObject, setAddingObject] = useState(false);
 
@@ -106,6 +108,7 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
         onChange={setTab}
         tabs={[
           { key: 'objekt', label: 'Objekt', count: objectCount },
+          { key: 'resultat', label: 'Resultat och budget' },
           { key: 'uppgifter', label: 'Uppgifter' },
           { key: 'byggnader', label: 'Byggnader' },
           { key: 'ekonomi', label: 'Taxering, värdering och lån' },
@@ -131,6 +134,8 @@ export default function PropertyPage({ params }: { params: Promise<{ id: string 
           <ObjectTable propertyId={id} version={objVersion} hideProperty />
         </div>
       )}
+
+      {tab === 'resultat' && <PropertyEconomy propertyId={id} companyId={p.companyId} editable={can('budget.write', p.companyId)} />}
 
       {tab === 'uppgifter' && <PropertyForm property={p} editable={editable} onSaved={load} onDeleted={() => router.push('/fastigheter')} />}
 

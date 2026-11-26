@@ -224,13 +224,15 @@ describe('importcentral, andra format', () => {
     const up = (await agent.post(`/imports/${b}/files`).attach('files', sieFile(), 'bokforing.se').expect(200)).body;
     expect(up.files[0].format).toBe('sie');
     const v = (await agent.post(`/imports/${b}/validate`).expect(200)).body;
-    expect(v.perEntity.account.new).toBe(5);
+    // Bolaget har redan BAS-standardkonton (fas 6). Två av kontona i filen finns och kopplas, tre är nya.
+    expect(v.perEntity.account.total).toBe(5);
+    expect(v.perEntity.account.new).toBe(3);
     expect(v.perEntity.voucher.new).toBe(2);
     const acc = await rows(b, 'account');
     expect(acc.map((a) => a.label)).toContain('1930 Företagskonto');
     await agent.post(`/imports/${b}/test`).expect(200);
     const c = (await agent.post(`/imports/${b}/commit`).expect(200)).body;
-    expect(c.result.created).toMatchObject({ account: 5, voucher: 2 });
+    expect(c.result.created).toMatchObject({ account: 3, voucher: 2 });
   });
 
   it('läser hyresgäster från CSV i Windows-1252 med semikolon', async () => {

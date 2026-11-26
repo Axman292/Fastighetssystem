@@ -19,10 +19,13 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/inbetalningar', label: 'Inbetalningar', icon: <Icon d="M3 7h14v9H3zM3 10h14M6 13h3" /> },
   { href: '/paminnelser', label: 'Påminnelser', icon: <Icon d="M10 3a5 5 0 0 0-5 5v3l-1.5 3h13L15 11V8a5 5 0 0 0-5-5zM8 16a2 2 0 0 0 4 0" /> },
   { href: '/reskontra', label: 'Kundreskontra', icon: <Icon d="M4 4h12v12H4zM4 8h12M8 8v8" /> },
-  { href: '#', label: 'Ekonomi', icon: <Icon d="M4 16V9M8 16V5M12 16v-5M16 16V7" />, soon: true },
+  { href: '/leverantorer', label: 'Leverantörer', icon: <Icon d="M3 6h9v8H3zM12 9h3l2 2.5V14h-5M6 16.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM14 16.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" /> },
+  { href: '/leverantorsfakturor', label: 'Leverantörsfakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3M8.5 13h2" /> },
+  { href: '/ekonomi', label: 'Ekonomi', icon: <Icon d="M4 16V9M8 16V5M12 16v-5M16 16V7" /> },
 ];
 
 const admin = [
+  { href: '/kontoplan', label: 'Kontoplan', icon: <Icon d="M4 4h12v12H4zM4 8h12M4 12h12M8 4v12" /> },
   { href: '/import', label: 'Importcentral', icon: <Icon d="M10 3v9M6 8l4 4 4-4M4 14v3h12v-3" /> },
   { href: '/anvandare', label: 'Användare', icon: <Icon d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 16c0-3 3-4.5 6-4.5s6 1.5 6 4.5M14 4a2.5 2.5 0 0 1 0 5M16 11.5c1.5.5 2.5 1.8 2.5 4" /> },
   { href: '/logg', label: 'Revisionslogg', icon: <Icon d="M10 4v6l4 2M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" /> },

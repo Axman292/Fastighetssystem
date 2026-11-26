@@ -25,6 +25,9 @@ import { BankFilesController, BankTransactionsController } from './payments/bank
 import { RemindersController } from './payments/reminders.controller';
 import { LedgerController } from './payments/ledger.controller';
 import { ChargesController } from './billing/charges.controller';
+import { AccountsController, SuppliersController } from './suppliers/suppliers.controller';
+import { SupplierInvoicesController } from './suppliers/supplier-invoices.controller';
+import { EconomyController } from './economy/economy.controller';
 
 @Module({
   controllers: [
@@ -49,6 +52,10 @@ import { ChargesController } from './billing/charges.controller';
     BankTransactionsController,
     RemindersController,
     LedgerController,
+    AccountsController,
+    SuppliersController,
+    SupplierInvoicesController,
+    EconomyController,
   ],
   providers: [
     AuthService,

@@ -17,7 +17,13 @@ export const kronor = z
   .max(1e12)
   .transform(kronorToOre);
 
-export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ange datum som ÅÅÅÅ-MM-DD');
+export const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ange datum som ÅÅÅÅ-MM-DD')
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+  }, 'Datumet finns inte');
 
 /** Dagen före ett ISO-datum. */
 export function dayBefore(iso: string): string {
