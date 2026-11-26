@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Card, PageHeader } from '@/components/ui';
-import { api, Company, CostCenter } from '@/lib/api';
+import { api, Company } from '@/lib/api';
+import { fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
 /**
@@ -13,11 +14,11 @@ import { useSession } from '@/lib/session';
 export default function OverviewPage() {
   const { me, active, version } = useSession();
   const [companies, setCompanies] = useState<Company[] | null>(null);
-  const [costCenters, setCostCenters] = useState<CostCenter[] | null>(null);
+  const [properties, setProperties] = useState<{ objectCount: number; monthlyRentOre: number }[] | null>(null);
 
   useEffect(() => {
     api<Company[]>('/companies').then(setCompanies);
-    api<CostCenter[]>('/cost-centers').then(setCostCenters);
+    api<{ objectCount: number; monthlyRentOre: number }[]>('/properties').then(setProperties);
   }, [version]);
 
   const scope = active ? active.companyName : 'Hela koncernen';
@@ -27,12 +28,12 @@ export default function OverviewPage() {
       <PageHeader title={`God ${greeting()}, ${me.user.name.split(' ')[0]}`} description={`Visar ${scope}.`} />
       <div className="grid grid-cols-4 gap-3">
         <Stat label="Bolag" value={companies?.length} />
-        <Stat label="Kostnadsställen" value={costCenters?.length} />
-        <Stat label="Fastigheter" pending="Fas 2" />
+        <Stat label="Fastigheter" value={properties?.length} />
+        <Stat label="Uthyrningsbara objekt" value={properties?.reduce((s, p) => s + p.objectCount, 0)} />
+        <Stat label="Hyresvärde per år" text={properties ? fmtOre(properties.reduce((s, p) => s + p.monthlyRentOre, 0) * 12) : undefined} />
         <Stat label="Uthyrningsgrad" pending="Fas 3" />
         <Stat label="Aviserat denna månad" pending="Fas 4" />
         <Stat label="Obetalda fakturor" pending="Fas 5" />
-        <Stat label="Avtal som löper ut" pending="Fas 3" />
         <Stat label="Driftnetto" pending="Fas 6" />
       </div>
 
@@ -52,14 +53,14 @@ export default function OverviewPage() {
   );
 }
 
-function Stat({ label, value, pending }: { label: string; value?: number; pending?: string }) {
+function Stat({ label, value, text, pending }: { label: string; value?: number; text?: string; pending?: string }) {
   return (
     <Card className="px-4 py-3.5">
       <div className="text-[12px] text-ink-3">{label}</div>
       {pending ? (
         <div className="mt-1.5 text-[13px] text-ink-3">Kommer i {pending.toLowerCase()}</div>
       ) : (
-        <div className="mt-1 text-[22px] font-semibold tabular tracking-[-0.01em]">{value ?? '–'}</div>
+        <div className="mt-1 text-[22px] font-semibold tabular tracking-[-0.01em]">{text ?? value ?? '–'}</div>
       )}
     </Card>
   );
