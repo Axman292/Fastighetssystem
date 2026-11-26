@@ -29,9 +29,24 @@ const companyFields = {
   fTax: z.boolean().optional(),
   invoiceFooter: z.string().trim().max(500).nullable().optional(),
   roundToKrona: z.boolean().optional(),
+  // Påminnelseavgift i kronor, högst 60 kr enligt förordningen om ersättning för inkassokostnader
+  reminderFee: z.number().finite().min(0, 'Kan inte vara negativ').max(60, 'Högst 60 kr är tillåtet').optional(),
+  reminderGraceDays: z.number().int().min(0).max(90).optional(),
+  reminderDueDays: z.number().int().min(1).max(60).optional(),
+  // Dröjsmålsränta i procent per år
+  lateInterestRate: z.number().finite().min(0).max(50).optional(),
 };
-const createSchema = z.object(companyFields);
-const updateSchema = z.object(companyFields).partial().extend({ active: z.boolean().optional() });
+/** Kronor och procent från formuläret till öre och baspunkter i databasen. */
+function toColumns<T extends { reminderFee?: number; lateInterestRate?: number }>(d: T) {
+  const { reminderFee, lateInterestRate, ...rest } = d;
+  return {
+    ...rest,
+    ...(reminderFee !== undefined ? { reminderFeeOre: Math.round(reminderFee * 100) } : {}),
+    ...(lateInterestRate !== undefined ? { lateInterestBp: Math.round(lateInterestRate * 100) } : {}),
+  };
+}
+const createSchema = z.object(companyFields).transform(toColumns);
+const updateSchema = z.object(companyFields).partial().extend({ active: z.boolean().optional() }).transform(toColumns);
 
 @Controller('companies')
 export class CompaniesController {

@@ -195,7 +195,8 @@ export const INVOICE_LIST_SQL = `
          i.credits_invoice_id as "creditsInvoiceId", i.delivery_method as "deliveryMethod",
          (select d.status from invoice_delivery d where d.invoice_id = i.id order by d.created_at desc limit 1) as "deliveryStatus",
          coalesce((select string_agg(distinct o.object_nr, ', ') from invoice_line l join rental_object o on o.id = l.object_id
-                   where l.invoice_id = i.id), '') as objects
+                   where l.invoice_id = i.id), '') as objects,
+         coalesce((select max(r.level) from reminder r where r.invoice_id = i.id), 0) as "reminderLevel"
   from invoice i
   join company co on co.id = i.company_id
   join customer cu on cu.id = i.customer_id
@@ -330,17 +331,7 @@ export async function loadInvoice(client: PoolClient, id: string) {
       [id],
     )
   ).rows;
-  const company: CompanyInfo = (
-    await client.query(
-      `select name, org_nr as "orgNr", vat_nr as "vatNr", address_line as "addressLine", postal_code as "postalCode", city,
-              bankgiro, plusgiro, invoice_email as "invoiceEmail", f_tax as "fTax", invoice_footer as "invoiceFooter",
-              round_to_krona as "roundToKrona",
-              (select iban from bank_account b where b.company_id = company.id and b.purpose = 'rent' and b.iban is not null limit 1) as iban,
-              (select bic from bank_account b where b.company_id = company.id and b.purpose = 'rent' and b.iban is not null limit 1) as bic
-       from company where id = $1`,
-      [inv.companyId],
-    )
-  ).rows[0];
+  const company = await companyInfo(client, inv.companyId);
   const live = inv.status === 'draft' ? (await billToFor(client, inv.customerId)).billTo : null;
   return {
     ...inv,
@@ -353,6 +344,21 @@ export async function loadInvoice(client: PoolClient, id: string) {
     deliveries,
     company,
   };
+}
+
+/** Bolagsuppgifter som visas på fakturor, påminnelser och kontoutdrag. */
+export async function companyInfo(client: PoolClient, companyId: string): Promise<CompanyInfo> {
+  return (
+    await client.query(
+      `select name, org_nr as "orgNr", vat_nr as "vatNr", address_line as "addressLine", postal_code as "postalCode", city,
+              bankgiro, plusgiro, invoice_email as "invoiceEmail", f_tax as "fTax", invoice_footer as "invoiceFooter",
+              round_to_krona as "roundToKrona",
+              (select iban from bank_account b where b.company_id = company.id and b.purpose = 'rent' and b.iban is not null limit 1) as iban,
+              (select bic from bank_account b where b.company_id = company.id and b.purpose = 'rent' and b.iban is not null limit 1) as bic
+       from company where id = $1`,
+      [companyId],
+    )
+  ).rows[0];
 }
 
 export interface CompanyInfo {

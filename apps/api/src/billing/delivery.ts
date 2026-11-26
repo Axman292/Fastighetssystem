@@ -26,7 +26,7 @@ export function deliveryMode(): { email: 'smtp' | 'test'; eInvoice: 'test'; outb
 }
 
 let transport: Transporter | undefined;
-function smtp(): Transporter {
+export function smtp(): Transporter {
   if (!transport) {
     transport = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -109,6 +109,21 @@ async function mark(client: PoolClient, id: string, status: string, error: strin
     `update invoice_delivery set status = $2, error = $3, sent_at = case when $2 in ('sent','test') then now() else sent_at end where id = $1`,
     [id, status, error],
   );
+}
+
+/**
+ * Skickar ett e-postmeddelande via SMTP, eller sparar det som .eml i OUTBOX_DIR i testläge.
+ * Används även för påminnelser och kontoutdrag.
+ */
+export async function sendOrSave(mail: nodemailer.SendMailOptions, fileBase: string): Promise<'sent' | 'test'> {
+  const mode = deliveryMode();
+  if (mode.email === 'smtp') {
+    await smtp().sendMail(mail);
+    return 'sent';
+  }
+  const raw = await nodemailer.createTransport({ streamTransport: true, buffer: true }).sendMail(mail);
+  save(mode.outbox, `${fileBase}.eml`, raw.message as Buffer);
+  return 'test';
 }
 
 function save(dir: string, name: string, data: Buffer) {

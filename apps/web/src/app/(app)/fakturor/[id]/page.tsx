@@ -18,6 +18,8 @@ import {
   fmtPeriod,
   formatDate,
   todayIso,
+  REMINDER_LEVEL_LABEL,
+  REMINDER_STATUS,
 } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
@@ -70,10 +72,12 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
   const [editing, setEditing] = useState(false);
   const [dialog, setDialog] = useState<DialogKind>(null);
 
+  const [reminders, setReminders] = useState<{ id: string; level: number; reminderDate: string; dueDate: string; feeOre: number; status: string; channel: string; feeInvoiceId: string | null; feeInvoiceNr: number | null }[]>([]);
   const load = useCallback(() => {
     api<Detail>(`/invoices/${id}`)
       .then(setD)
       .catch((e: ApiError) => setError(e.message));
+    api<typeof reminders>(`/reminders?invoiceId=${id}`).then(setReminders).catch(() => setReminders([]));
   }, [id]);
   useEffect(load, [load]);
 
@@ -288,6 +292,38 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
                               Ta bort
                             </Button>
                           )}
+                        </Td>
+                      </tr>
+                    ))}
+                  </Table>
+                </section>
+              )}
+
+              {reminders.length > 0 && (
+                <section>
+                  <SectionHeader title="Påminnelser" />
+                  <Table head={['Datum', 'Nivå', 'Betala senast', 'Avgift', 'Status', '']}>
+                    {reminders.map((r) => (
+                      <tr key={r.id}>
+                        <Td className="tabular">{r.reminderDate}</Td>
+                        <Td>{REMINDER_LEVEL_LABEL[r.level]}</Td>
+                        <Td className="tabular text-ink-2">{r.dueDate}</Td>
+                        <Td className="tabular text-ink-2">
+                          {r.feeInvoiceId ? (
+                            <Link href={`/fakturor/${r.feeInvoiceId}`} className="hover:underline">
+                              {fmtOre(r.feeOre)} (faktura {r.feeInvoiceNr})
+                            </Link>
+                          ) : (
+                            '–'
+                          )}
+                        </Td>
+                        <Td>
+                          <Badge tone={REMINDER_STATUS[r.status]?.tone}>{r.channel === 'post' && r.status === 'queued' ? 'Ska skrivas ut' : REMINDER_STATUS[r.status]?.label}</Badge>
+                        </Td>
+                        <Td className="text-right">
+                          <a href={`/api/reminders/${r.id}/pdf`} target="_blank" rel="noreferrer" className="text-[12px] text-accent hover:underline">
+                            PDF
+                          </a>
                         </Td>
                       </tr>
                     ))}

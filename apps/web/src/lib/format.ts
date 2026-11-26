@@ -183,3 +183,23 @@ export function fmtPeriod(from: string | null, to: string | null): string {
 export function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date(iso));
 }
+
+export const BANK_TX_STATUS: Record<string, { label: string; tone: Tone }> = {
+  matched: { label: 'Matchad', tone: 'accent' },
+  unmatched: { label: 'Att hantera', tone: 'warn' },
+  ignored: { label: 'Hanterad utanför', tone: 'neutral' },
+  booked: { label: 'Bokförd', tone: 'good' },
+  duplicate: { label: 'Redan inläst', tone: 'neutral' },
+};
+
+export const MATCH_RULE_LABEL: Record<string, string> = { ocr: 'OCR', invoice_nr: 'Fakturanummer', name_amount: 'Namn och belopp', manual: 'Manuellt' };
+
+export const REMINDER_STATUS: Record<string, { label: string; tone: Tone }> = {
+  queued: { label: 'Ska skrivas ut', tone: 'warn' },
+  sent: { label: 'Skickad', tone: 'good' },
+  test: { label: 'Testläge', tone: 'accent' },
+  failed: { label: 'Misslyckades', tone: 'bad' },
+  printed: { label: 'Utskriven', tone: 'good' },
+};
+
+export const REMINDER_LEVEL_LABEL = ['', 'Påminnelse 1', 'Påminnelse 2'];

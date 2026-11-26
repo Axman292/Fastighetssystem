@@ -19,7 +19,11 @@ import { ContractsController } from './contracts/contracts.controller';
 import { KpiController } from './contracts/kpi.controller';
 import { ImportCenterController } from './imports/import-center.controller';
 import { BillingRunsController } from './billing/billing-runs.controller';
-import { InvoicesController, PaymentsController } from './billing/invoices.controller';
+import { InvoicesController } from './billing/invoices.controller';
+import { PaymentsController } from './payments/payments.controller';
+import { BankFilesController, BankTransactionsController } from './payments/bank-files.controller';
+import { RemindersController } from './payments/reminders.controller';
+import { LedgerController } from './payments/ledger.controller';
 import { ChargesController } from './billing/charges.controller';
 
 @Module({
@@ -41,6 +45,10 @@ import { ChargesController } from './billing/charges.controller';
     BillingRunsController,
     InvoicesController,
     PaymentsController,
+    BankFilesController,
+    BankTransactionsController,
+    RemindersController,
+    LedgerController,
   ],
   providers: [
     AuthService,

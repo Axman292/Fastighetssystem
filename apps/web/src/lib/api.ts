@@ -66,6 +66,10 @@ export interface Company {
   roundToKrona: boolean;
   active: boolean;
   updatedAt: string;
+  reminderFeeOre: number;
+  reminderGraceDays: number;
+  reminderDueDays: number;
+  lateInterestBp: number;
 }
 
 export interface BankAccount {

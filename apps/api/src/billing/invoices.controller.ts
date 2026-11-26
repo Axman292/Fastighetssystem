@@ -379,41 +379,6 @@ export class InvoicesController {
   }
 }
 
-@Controller('payments')
-export class PaymentsController {
-  /** Inbetalningar med fördelning, till exempel för en kund. */
-  @Get()
-  list(@Ctx() ctx: RequestContext, @Query('customerId') customerId?: string) {
-    if (customerId && !/^[0-9a-f-]{36}$/i.test(customerId)) throw new BadRequestException('Ogiltigt id');
-    return withContext(dbContext(ctx), async (_db, client) =>
-      (
-        await client.query(
-          `select p.id, p.company_id as "companyId", p.customer_id as "customerId", c.name as "customerName",
-                  p.amount_ore::float as "amountOre", p.payment_date::text as "paymentDate", p.method, p.reference, p.note,
-                  coalesce((select sum(a.amount_ore) from payment_allocation a where a.payment_id = p.id), 0)::float as "allocatedOre",
-                  coalesce((select string_agg(i.invoice_nr::text, ', ' order by i.invoice_nr) from payment_allocation a
-                            join invoice i on i.id = a.invoice_id where a.payment_id = p.id), '') as invoices
-           from payment p join customer c on c.id = p.customer_id
-           where ($1::uuid is null or p.customer_id = $1)
-           order by p.payment_date desc, p.created_at desc limit 500`,
-          [customerId || null],
-        )
-      ).rows,
-    );
-  }
-
-  /** Tar bort en felregistrerad betalning. Fördelningen tas bort och fakturan blir obetald igen. */
-  @Delete(':id')
-  @HttpCode(204)
-  async remove(@Ctx() ctx: RequestContext, @Param('id', ParseUUIDPipe) id: string) {
-    requireCompany(ctx, 'payment.write');
-    await withContext(dbContext(ctx), async (_db, client) => {
-      const { rowCount } = await client.query('delete from payment where id = $1', [id]);
-      if (!rowCount) throw new BadRequestException('Betalningen finns inte i valt bolag');
-    });
-  }
-}
-
 async function manualDraft(client: PoolClient, id: string) {
   const { rows } = await client.query(
     `select id, kind, status, customer_id, contract_id, invoice_date::text, due_date::text, our_reference, your_reference, message, billing_run_id
