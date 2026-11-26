@@ -115,9 +115,9 @@ export class BankFilesController {
         if (seen) m = { status: 'duplicate', rule: null, customerId: null, invoiceId: null, note: 'Betalningen finns redan i en tidigare inläst fil' };
         else if (p.kind === 'deduction') m = { status: 'unmatched', rule: null, customerId: null, invoiceId: null, note: 'Avdrag från Bankgirot, hanteras manuellt' };
         else if (p.extraReferences.length) {
-          const first = await matchPayment(client, companyId, p.reference, p.payerName);
+          const first = await matchPayment(client, companyId, p.reference, p.payerName, p.amountOre);
           m = { ...first, status: 'unmatched', note: 'Betalningen avser flera fakturor. Välj hur den ska fördelas.' };
-        } else m = await matchPayment(client, companyId, p.reference, p.payerName);
+        } else m = await matchPayment(client, companyId, p.reference, p.payerName, p.amountOre);
         await client.query(
           `insert into bank_transaction (company_id, bank_file_id, position, kind, amount_ore, payment_date, reference, reference_code,
              sender_bankgiro, payer_name, payer_address, payer_org_nr, information, extra_references, bgc_serial, deposit_serial,

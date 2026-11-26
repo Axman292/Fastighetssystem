@@ -91,14 +91,14 @@ export async function allocatePayment(
 }
 
 export interface MatchResult {
+  /** matched bokförs med filen. unmatched med kund ifylld är ett förslag som ska bekräftas. */
   status: 'matched' | 'unmatched';
-  rule: 'ocr' | 'invoice_nr' | null;
+  rule: 'ocr' | 'invoice_nr' | 'name_amount' | null;
   customerId: string | null;
   invoiceId: string | null;
   note: string | null;
 }
 
-/** Hittar fakturan för en inbetalning: först på OCR, sedan på fakturanummer i referensen. */
 /** Ord i ett namn utan versaler och accenter, för att jämföra inbetalarens namn med kundens. */
 function nameWords(name: string | null | undefined): Set<string> {
   return new Set(
@@ -116,40 +116,86 @@ export function namesMatch(a: string | null | undefined, b: string | null | unde
   return [...nameWords(b)].some((w) => wa.has(w));
 }
 
-export async function matchPayment(client: PoolClient, companyId: string, reference: string | null, payerName?: string | null): Promise<MatchResult> {
+/**
+ * Hittar fakturan för en inbetalning:
+ *  1. OCR-nummer (bokförs direkt),
+ *  2. fakturanummer i referensen när inbetalarens namn stämmer med kunden (bokförs direkt),
+ *  3. annars ett förslag: kund vars namn stämmer med inbetalaren och som har en obetald
+ *     faktura på exakt beloppet. Förslag bokförs först när någon bekräftat dem.
+ */
+export async function matchPayment(
+  client: PoolClient,
+  companyId: string,
+  reference: string | null,
+  payerName?: string | null,
+  amountOre?: number,
+): Promise<MatchResult> {
   const none: MatchResult = { status: 'unmatched', rule: null, customerId: null, invoiceId: null, note: null };
   const ref = (reference ?? '').replace(/\s/g, '');
-  if (!ref) return { ...none, note: 'Betalningen saknar referens' };
-  const byOcr = await client.query(
-    `select id, customer_id, kind from invoice where company_id = $1 and status = 'issued' and ocr = $2`,
-    [companyId, ref.replace(/^0+/, '')],
-  );
-  if (byOcr.rows[0]) return { status: 'matched', rule: 'ocr', customerId: byOcr.rows[0].customer_id, invoiceId: byOcr.rows[0].id, note: null };
-  const nr = ref.match(/\d{3,12}/)?.[0];
-  if (nr) {
-    const byNr = await client.query(
-      `select i.id, i.customer_id, c.name from invoice i join customer c on c.id = i.customer_id
-       where i.company_id = $1 and i.status = 'issued' and i.kind <> 'credit_note' and i.invoice_nr = $2`,
-      [companyId, Number(nr)],
+  let note = ref ? `Ingen faktura med OCR eller fakturanummer ${ref}.` : 'Betalningen saknar OCR-nummer.';
+  if (ref) {
+    const byOcr = await client.query(
+      `select id, customer_id, kind from invoice where company_id = $1 and status = 'issued' and ocr = $2`,
+      [companyId, ref.replace(/^0+/, '')],
     );
-    // Ett tal i en fritext kan vara t.ex. ett lägenhetsnummer. Matcha bara om inbetalaren heter som kunden.
-    if (byNr.rows[0] && !namesMatch(payerName, byNr.rows[0].name)) {
-      return {
-        ...none,
-        note: `Referensen innehåller ${nr}, som är fakturanummer för ${byNr.rows[0].name}, men inbetalaren heter något annat. Kontrollera och välj kund.`,
-      };
-    }
-    if (byNr.rows[0]) {
-      return {
-        status: 'matched',
-        rule: 'invoice_nr',
-        customerId: byNr.rows[0].customer_id,
-        invoiceId: byNr.rows[0].id,
-        note: `Matchad på fakturanummer ${nr} och inbetalarens namn eftersom OCR saknas. Kontrollera.`,
-      };
+    if (byOcr.rows[0]) return { status: 'matched', rule: 'ocr', customerId: byOcr.rows[0].customer_id, invoiceId: byOcr.rows[0].id, note: null };
+    const nr = ref.match(/\d{3,12}/)?.[0];
+    if (nr) {
+      const byNr = await client.query(
+        `select i.id, i.customer_id, c.name from invoice i join customer c on c.id = i.customer_id
+         where i.company_id = $1 and i.status = 'issued' and i.kind <> 'credit_note' and i.invoice_nr = $2`,
+        [companyId, Number(nr)],
+      );
+      // Ett tal i en fritext kan vara t.ex. ett lägenhetsnummer. Matcha bara om inbetalaren heter som kunden.
+      if (byNr.rows[0] && namesMatch(payerName, byNr.rows[0].name)) {
+        return {
+          status: 'matched',
+          rule: 'invoice_nr',
+          customerId: byNr.rows[0].customer_id,
+          invoiceId: byNr.rows[0].id,
+          note: `Matchad på fakturanummer ${nr} och inbetalarens namn eftersom OCR saknas. Kontrollera.`,
+        };
+      }
+      if (byNr.rows[0]) note = `Referensen innehåller ${nr}, som är fakturanummer för ${byNr.rows[0].name}, men inbetalaren heter något annat.`;
     }
   }
-  return { ...none, note: `Ingen faktura med OCR eller fakturanummer ${ref}` };
+  if (!payerName) return { ...none, note: `${note} Välj kund.` };
+
+  // Förslag på namn och belopp bland kundens obetalda fakturor
+  const { rows } = await client.query(
+    `select i.id, i.customer_id, i.invoice_nr::float as nr, c.name, b.balance_ore::float as balance
+     from invoice i join customer c on c.id = i.customer_id join invoice_balance b on b.invoice_id = i.id
+     where i.company_id = $1 and i.status = 'issued' and i.kind <> 'credit_note' and b.balance_ore > 0
+     order by i.due_date, i.invoice_nr`,
+    [companyId],
+  );
+  const named = rows.filter((r) => namesMatch(payerName, r.name));
+  const customers = new Set(named.map((r) => r.customer_id));
+  const exact = named.filter((r) => r.balance === amountOre);
+  const exactCustomers = new Set(exact.map((r) => r.customer_id));
+  if (exactCustomers.size === 1) {
+    const r = exact[0];
+    const more = exact.length > 1 ? ` Kunden har ${exact.length} obetalda fakturor på samma belopp, den äldsta föreslås.` : '';
+    return {
+      ...none,
+      rule: 'name_amount',
+      customerId: r.customer_id,
+      invoiceId: r.id,
+      note: `${note} Förslag: ${r.name}, faktura ${r.nr}. Namn och belopp stämmer.${more} Bekräfta förslaget.`,
+    };
+  }
+  if (exactCustomers.size > 1) return { ...none, note: `${note} Flera kunder med liknande namn har en obetald faktura på beloppet. Välj kund.` };
+  if (customers.size === 1) {
+    const r = named[0];
+    return {
+      ...none,
+      rule: 'name_amount',
+      customerId: r.customer_id,
+      invoiceId: null,
+      note: `${note} Förslag: ${r.name}. Namnet stämmer men inte beloppet, så det fördelas på äldsta obetalda fakturor. Bekräfta förslaget.`,
+    };
+  }
+  return { ...none, note: `${note} Välj kund.` };
 }
 
 /** Bokför en matchad banktransaktion som betalning och fördelar den. */

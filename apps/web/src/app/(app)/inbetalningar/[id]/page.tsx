@@ -52,6 +52,23 @@ export default function BankFilePage({ params }: { params: Promise<{ id: string 
   const duplicates = count('duplicate');
   const sum = (list: BankTx[]) => list.reduce((s, t) => s + t.amountOre, 0);
   const warnings = f.transactions.filter((t) => matchNote(t)?.tone === 'warn');
+  const suggestions = unmatched.filter((t) => t.matchRule === 'name_amount' && t.customerId);
+
+  /** Bekräftar förslag på namn och belopp. Är filen bokförd bokförs de direkt. */
+  async function confirm(list: BankTx[]) {
+    setBusy(true);
+    setError(null);
+    try {
+      for (const t of list) {
+        await api(`/bank-transactions/${t.id}`, { method: 'PATCH', ...opts, body: { customerId: t.customerId, invoiceId: t.invoiceId, note: 'Förslag på namn och belopp bekräftat' } });
+      }
+      load();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function book() {
     setBusy(true);
@@ -138,10 +155,25 @@ export default function BankFilePage({ params }: { params: Promise<{ id: string 
           {warnings.length > 0 && ` ${warnings.length === 1 ? '1 betalning avviker' : `${warnings.length} betalningar avviker`} från fakturans belopp.`}
         </Card>
       )}
+      {suggestions.length > 0 && (
+        <Card className="mb-6 flex items-center gap-4 px-4 py-3.5 text-[13px]">
+          <Badge tone="accent">Förslag</Badge>
+          <div className="flex-1 text-ink-2">
+            {suggestions.length === 1 ? '1 betalning saknar' : `${suggestions.length} betalningar saknar`} OCR men inbetalarens namn och beloppet pekar ut en hyresgäst.
+            Kontrollera förslagen i tabellen. De bokförs först när du godkänner dem.
+          </div>
+          {canWrite && (
+            <Button size="sm" variant="secondary" onClick={() => confirm(suggestions)} disabled={busy}>
+              Godkänn {suggestions.length === 1 ? 'förslaget' : `alla ${suggestions.length} förslag`}
+            </Button>
+          )}
+        </Card>
+      )}
 
       <Table head={['#', 'Inbetalare', 'Referens', 'Belopp', 'Kund', 'Faktura', 'Kommentar', 'Status', '']}>
         {f.transactions.map((t) => {
-          const s = BANK_TX_STATUS[t.status];
+          const suggested = t.status === 'unmatched' && t.matchRule === 'name_amount' && !!t.customerId;
+          const s = suggested ? { label: 'Förslag', tone: 'accent' as const } : BANK_TX_STATUS[t.status];
           const n = matchNote(t);
           return (
             <tr key={t.id}>
@@ -179,9 +211,14 @@ export default function BankFilePage({ params }: { params: Promise<{ id: string 
                 <Badge tone={s.tone}>{s.label}</Badge>
               </Td>
               <Td className="text-right">
+                {canWrite && suggested && (
+                  <Button size="sm" variant="secondary" onClick={() => confirm([t])} disabled={busy}>
+                    Godkänn
+                  </Button>
+                )}
                 {canWrite && ['matched', 'unmatched'].includes(t.status) && (
                   <Button size="sm" variant="ghost" onClick={() => setAssign(t)}>
-                    {t.status === 'unmatched' ? 'Välj kund' : 'Ändra'}
+                    {t.status === 'unmatched' && !suggested ? 'Välj kund' : 'Ändra'}
                   </Button>
                 )}
               </Td>

@@ -195,6 +195,35 @@ describe('inläsning av BgMax', () => {
     await agent.delete(`/bank-files/${r.body.id}`).expect(204);
   });
 
+  it('föreslår kund och faktura på namn och belopp när OCR saknas, men bokför inte utan bekräftelse', async () => {
+    const text = buildBgMax({
+      bankgiro: '5050-1055',
+      date: '2027-01-04',
+      payments: [
+        { amountOre: inv.anna02.totalOre, name: 'TESTSSON ANNA', serial: '270104000001' },
+        { reference: 'HYRA', amountOre: 123_400, name: 'ANNA TESTSSON', serial: '270104000002' },
+        { amountOre: inv.anna02.totalOre, name: 'NAGON ANNAN', serial: '270104000003' },
+      ],
+    });
+    const r = await upload(text, 'BGMAX_20270104.txt').expect(201);
+    const f = await agent.get(`/bank-files/${r.body.id}`).expect(200);
+    const [exact, nameOnly, nobody] = f.body.transactions;
+    expect(exact).toMatchObject({ status: 'unmatched', matchRule: 'name_amount', customerId: id.anna, invoiceId: inv.anna02.id });
+    expect(exact.note).toMatch(/Namn och belopp stämmer/);
+    expect(nameOnly).toMatchObject({ status: 'unmatched', matchRule: 'name_amount', customerId: id.anna, invoiceId: null });
+    expect(nobody).toMatchObject({ status: 'unmatched', matchRule: null, customerId: null });
+    // Bokför tar bara med säkra matchningar
+    const b = await agent.post(`/bank-files/${r.body.id}/book`).expect(201);
+    expect(b.body).toEqual({ booked: 0, unmatched: 3 });
+    // Ett bekräftat förslag bokförs direkt
+    await agent.patch(`/bank-transactions/${exact.id}`).send({ customerId: exact.customerId, invoiceId: exact.invoiceId }).expect(200);
+    expect((await agent.get(`/invoices/${inv.anna02.id}`).expect(200)).body.balanceOre).toBe(0);
+    // Ta tillbaka så att resten av testerna har samma utgångsläge
+    const p = (await agent.get(`/payments?customerId=${id.anna}`).expect(200)).body.find((x: { bankTransactionId: string }) => x.bankTransactionId === exact.id);
+    await agent.delete(`/payments/${p.id}`).expect(204);
+    for (const t of f.body.transactions) await agent.patch(`/bank-transactions/${t.id}`).send({ ignore: true, note: 'Testdata' }).expect(200);
+  });
+
   it('bokför en omatchad betalning när kunden pekats ut', async () => {
     const open = await agent.get('/bank-transactions?status=unmatched').expect(200);
     expect(open.body.map((t: { id: string }) => t.id)).toContain(id.unmatchedTx);
@@ -213,7 +242,7 @@ describe('inläsning av BgMax', () => {
     expect(t).toMatchObject({ status: 'unmatched', customerId: null });
     await agent.patch(`/bank-transactions/${id.unmatchedTx}`).send({ ignore: true, note: 'Återbetald av banken' }).expect(200);
     const after = await agent.get('/bank-transactions?status=ignored').expect(200);
-    expect(after.body[0]).toMatchObject({ id: id.unmatchedTx, note: 'Återbetald av banken' });
+    expect(after.body.find((x: { id: string }) => x.id === id.unmatchedTx)).toMatchObject({ note: 'Återbetald av banken' });
   });
 });
 

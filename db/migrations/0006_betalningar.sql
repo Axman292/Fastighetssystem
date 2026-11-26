@@ -72,7 +72,7 @@ create table bank_transaction (
   bgc_serial        text,                 -- Bankgirots löpnummer, unikt per betalning
   deposit_serial    text,
   status            text not null check (status in ('matched','unmatched','ignored','booked','duplicate')),
-  match_rule        text check (match_rule in ('ocr','invoice_nr','manual')),
+  match_rule        text check (match_rule in ('ocr','invoice_nr','name_amount','manual')),  -- name_amount = förslag som ska bekräftas
   customer_id       uuid,
   invoice_id        uuid,
   note              text,

@@ -192,7 +192,7 @@ export const BANK_TX_STATUS: Record<string, { label: string; tone: Tone }> = {
   duplicate: { label: 'Redan inläst', tone: 'neutral' },
 };
 
-export const MATCH_RULE_LABEL: Record<string, string> = { ocr: 'OCR', invoice_nr: 'Fakturanummer', manual: 'Manuellt' };
+export const MATCH_RULE_LABEL: Record<string, string> = { ocr: 'OCR', invoice_nr: 'Fakturanummer', name_amount: 'Namn och belopp', manual: 'Manuellt' };
 
 export const REMINDER_STATUS: Record<string, { label: string; tone: Tone }> = {
   queued: { label: 'Ska skrivas ut', tone: 'warn' },

@@ -52,7 +52,7 @@ Databasen hindrar själv att samma avtalsrad aviseras två gånger för samma da
 ## Vad som finns i fas 5
 
 - **Inläsning av bankfiler.** Bankgirots inbetalningsfil (BgMax, tjänsten Bankgiro Inbetalningar) läses in under Inbetalningar. Filen kontrolleras mot bolagets bankgiro och mot filens egna summor. Betalningarna får den betalningsdag som står i filen.
-- **Automatisk matchning.** Betalningar kopplas till fakturan via OCR-numret. Saknas OCR används ett fakturanummer i referensen, men bara om inbetalarens namn stämmer med kunden.
+- **Automatisk matchning.** Betalningar kopplas till fakturan via OCR-numret. Saknas OCR används ett fakturanummer i referensen, men bara om inbetalarens namn stämmer med kunden. Annars föreslås en hyresgäst vars namn stämmer med inbetalaren och som har en obetald faktura på exakt beloppet. Förslag bokförs först när någon godkänt dem.
 - **Granska innan bokföring.** Filen ligger som utkast tills någon trycker på Bokför. Betalningar som inte hittade sin faktura hamnar under Att hantera, där man väljer kund och faktura eller markerar dem som hanterade utanför systemet.
 - **Överbetalning och återbetalning.** Det som betalats för mycket ligger kvar som ej fördelat på kunden och kan fördelas på en annan faktura eller registreras som återbetalt.
 - **Påminnelser.** Förfallna fakturor föreslås efter en frist. Påminnelse 1 och 2 skickas med e-post eller skrivs ut som brev. Påminnelseavgiften (högst 60 kr, en gång per faktura) blir en egen momsfri faktura, och en betalning på den ursprungliga OCR:en täcker både hyran och avgiften. Upplupen dröjsmålsränta visas på påminnelsen men debiteras inte. Efter två påminnelser visas fakturan som redo för inkasso.
