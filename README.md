@@ -43,11 +43,25 @@ Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssyste
 - **Extra debiteringar** på ett avtal (nycklar, skador, avgifter) följer med nästa avi.
 - **Manuella fakturor** (engångsfakturor) med valfria rader, koppling till avtal, objekt och kostnadsställe.
 - **Kreditfakturor** för hela eller delar av en faktura, med val om perioden ska aviseras på nytt.
-- **Betalningar** registreras manuellt, med delbetalning och överskjutande belopp. Inläsning av bankfiler (BgMax) kommer i fas 5.
+- **Betalningar** registreras manuellt, med delbetalning och överskjutande belopp. Bankfiler läses in från fas 5.
 - **PDF** för varje avi och faktura, en samlad PDF för brevavier, **e-post** med PDF och **e-faktura** i Peppol BIS Billing 3.0.
 - **Spårbarhet.** Varje fakturarad bär bolag, fastighet, objekt, avtal, avtalsrad och kostnadsställe, så att en senare export till bokföringen kan göras utan dubbelposter.
 
 Databasen hindrar själv att samma avtalsrad aviseras två gånger för samma dag, att en extra debitering faktureras två gånger och att en utfärdad faktura ändras eller tas bort.
+
+## Vad som finns i fas 5
+
+- **Inläsning av bankfiler.** Bankgirots inbetalningsfil (BgMax, tjänsten Bankgiro Inbetalningar) läses in under Inbetalningar. Filen kontrolleras mot bolagets bankgiro och mot filens egna summor. Betalningarna får den betalningsdag som står i filen.
+- **Automatisk matchning.** Betalningar kopplas till fakturan via OCR-numret. Saknas OCR används ett fakturanummer i referensen, men bara om inbetalarens namn stämmer med kunden.
+- **Granska innan bokföring.** Filen ligger som utkast tills någon trycker på Bokför. Betalningar som inte hittade sin faktura hamnar under Att hantera, där man väljer kund och faktura eller markerar dem som hanterade utanför systemet.
+- **Överbetalning och återbetalning.** Det som betalats för mycket ligger kvar som ej fördelat på kunden och kan fördelas på en annan faktura eller registreras som återbetalt.
+- **Påminnelser.** Förfallna fakturor föreslås efter en frist. Påminnelse 1 och 2 skickas med e-post eller skrivs ut som brev. Påminnelseavgiften (högst 60 kr, en gång per faktura) blir en egen momsfri faktura, och en betalning på den ursprungliga OCR:en täcker både hyran och avgiften. Upplupen dröjsmålsränta visas på påminnelsen men debiteras inte. Efter två påminnelser visas fakturan som redo för inkasso.
+- **Kundreskontra.** Saldo per kund med åldersanalys (ej förfallet, 1–30, 31–60, 61–90, över 90 dagar), och ett kontoutdrag per kund med löpande saldo, på skärmen och som PDF.
+- **Inställningar per bolag:** påminnelseavgift, frist, ny betalningsfrist och dröjsmålsränta.
+
+Databasen hindrar att samma fil läses in två gånger, att samma betalning (Bankgirots löpnummer) bokförs två gånger, att en betalning fördelas eller återbetalas med mer än sitt belopp och att samma påminnelsenivå skickas två gånger.
+
+Filen hämtas i dag i internetbanken och läses in för hand. Inläsningen är skild från filkällan, så att automatisk filöverföring från banken kan kopplas på senare.
 
 ### Utskick
 
@@ -95,4 +109,4 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 
 ## Nästa fas
 
-Fas 5: kundreskontra med inläsning av bankfiler (BgMax), påminnelser och dröjsmålsränta.
+Bestäms tillsammans med axel. Kopplingen till Hogia väntar tills vidare.

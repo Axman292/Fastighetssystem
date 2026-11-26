@@ -11,6 +11,7 @@ import { contactFields, customerFields, customerInvoiceFields } from '@/lib/fiel
 import { CONTRACT_TYPE_LABEL, DELIVERY_LABEL, contractStatus, fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
 import { InvoiceRow, InvoiceTable } from '@/components/invoice-table';
+import { CustomerLedger } from '@/components/customer-ledger';
 
 interface Contact {
   id: string;
@@ -57,11 +58,10 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
   const [contact, setContact] = useState<Contact | 'new' | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [invoices, setInvoices] = useState<InvoiceRow[] | null>(null);
-  const [payments, setPayments] = useState<{ amountOre: number; allocatedOre: number }[] | null>(null);
-  useEffect(() => {
+  const loadInvoices = useCallback(() => {
     api<InvoiceRow[]>(`/invoices?customerId=${id}`).then(setInvoices);
-    api<{ amountOre: number; allocatedOre: number }[]>(`/payments?customerId=${id}`).then(setPayments);
   }, [id]);
+  useEffect(loadInvoices, [loadInvoices]);
 
   const load = useCallback(() => {
     api<CustomerDetail>(`/customers/${id}`).then(setC).catch((e: ApiError) => setError(e.message));
@@ -137,7 +137,6 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
       <section className="mb-10">
         <SectionHeader
           title="Fakturor"
-          description={payments && payments.some((p) => p.allocatedOre < p.amountOre) ? `Ej fördelade inbetalningar: ${fmtOre(payments.reduce((s, p) => s + p.amountOre - p.allocatedOre, 0), true)}` : undefined}
           actions={
             can('invoice.write', c.companyId) && (
               <Link href={`/fakturor/ny?customerId=${id}`}>
@@ -150,6 +149,8 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
         />
         <InvoiceTable rows={invoices ?? []} showCustomer={false} empty="Inga fakturor ännu." />
       </section>
+
+      <CustomerLedger customerId={id} companyId={c.companyId} onChange={loadInvoices} />
 
       <div className="grid grid-cols-[3fr_2fr] gap-6">
         <section>

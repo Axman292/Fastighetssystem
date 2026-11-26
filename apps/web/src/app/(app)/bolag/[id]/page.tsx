@@ -15,6 +15,13 @@ const invoiceSettingsFields: FormFieldDef[] = [
   { key: 'roundToKrona', label: 'Avrunda fakturor till hela kronor', type: 'checkbox' },
 ];
 
+const reminderSettingsFields: FormFieldDef[] = [
+  { key: 'reminderFee', label: 'Påminnelseavgift', type: 'kronor', half: true, required: true, hint: 'Högst 60 kr. Tas ut en gång per faktura, om det avtalats i förväg.' },
+  { key: 'lateInterestRate', label: 'Dröjsmålsränta (% per år)', type: 'number', half: true, required: true, hint: 'Referensräntan plus 8 procentenheter enligt räntelagen' },
+  { key: 'reminderGraceDays', label: 'Dagar efter förfallodagen innan påminnelse', type: 'number', half: true, required: true },
+  { key: 'reminderDueDays', label: 'Ny betalningsfrist på påminnelsen (dagar)', type: 'number', half: true, required: true },
+];
+
 const purposes: Record<string, string> = {
   rent: 'Hyresinbetalningar',
   operations: 'Drift',
@@ -59,6 +66,16 @@ export default function CompanyPage({ params }: { params: Promise<{ id: string }
               key={company.updatedAt}
               fields={invoiceSettingsFields}
               row={company as unknown as Record<string, unknown>}
+              editable={editable}
+              save={async (body) => setCompany(await api<Company>(`/companies/${id}`, { method: 'PATCH', body }))}
+            />
+          </section>
+          <section>
+            <SectionHeader title="Påminnelser" description="Hur förfallna fakturor påminns." />
+            <EditForm
+              key={`r-${company.updatedAt}`}
+              fields={reminderSettingsFields}
+              row={{ ...company, reminderFee: company.reminderFeeOre, lateInterestRate: company.lateInterestBp / 100 } as unknown as Record<string, unknown>}
               editable={editable}
               save={async (body) => setCompany(await api<Company>(`/companies/${id}`, { method: 'PATCH', body }))}
             />

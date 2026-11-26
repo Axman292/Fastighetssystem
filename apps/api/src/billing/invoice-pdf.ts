@@ -1,18 +1,18 @@
 import PDFDocument from 'pdfkit';
-import type { InvoiceDetail } from './invoice-store';
+import type { CompanyInfo, InvoiceDetail } from './invoice-store';
 import { periodLabel } from './billing-rules';
 
-type Doc = InstanceType<typeof PDFDocument>;
+export type Doc = InstanceType<typeof PDFDocument>;
 
 const TITLE: Record<string, string> = { rent_notice: 'Hyresavi', invoice: 'Faktura', credit_note: 'Kreditfaktura' };
 
-const kr = (ore: number) =>
+export const kr = (ore: number) =>
   `${(ore / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/[\u00a0\u202f]/g, ' ').replace(/\u2212/g, '-')} kr`;
 
-const ink = '#111827';
-const muted = '#6b7280';
-const rule = '#e5e7eb';
-const L = 56;
+export const ink = '#111827';
+export const muted = '#6b7280';
+export const rule = '#e5e7eb';
+export const L = 56;
 
 /** En faktura som PDF. */
 export function renderInvoicePdf(d: InvoiceDetail): Promise<Buffer> {
@@ -51,7 +51,7 @@ export function renderInvoicesPdf(list: InvoiceDetail[]): Promise<Buffer> {
   return done;
 }
 
-function footer(doc: Doc, d: InvoiceDetail, page: number, pages: number) {
+export function footer(doc: Doc, d: { company: CompanyInfo }, page: number, pages: number) {
   const c = d.company;
   const width = doc.page.width - 2 * L;
   const y = doc.page.height - 78;

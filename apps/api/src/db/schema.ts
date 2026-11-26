@@ -44,6 +44,10 @@ export const company = pgTable('company', {
   fTax: boolean('f_tax').notNull().default(true),
   invoiceFooter: text('invoice_footer'),
   roundToKrona: boolean('round_to_krona').notNull().default(true),
+  reminderFeeOre: bigint('reminder_fee_ore', { mode: 'number' }).notNull().default(6000),
+  reminderGraceDays: integer('reminder_grace_days').notNull().default(5),
+  reminderDueDays: integer('reminder_due_days').notNull().default(10),
+  lateInterestBp: integer('late_interest_bp').notNull().default(1000),
   active: boolean('active').notNull().default(true),
   ...audit,
 });
