@@ -1,0 +1,27 @@
+# Gratis testmiljö på Render (Frankfurt). Databasen ligger hos Neon (Frankfurt).
+# Bara påhittade testdata: inga riktiga hyresgäster eller personnummer här.
+# Se deploy/TESTMILJO.md.
+services:
+  - type: web
+    name: fastighetssystem-test
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+    buildCommand: npx --yes pnpm@10.28.0 install --frozen-lockfile && npx --yes pnpm@10.28.0 build
+    startCommand: bash deploy/start.sh
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DEMO_DATA
+        value: "true"
+      # Fylls i när tjänsten skapas: anslutningsadressen från Neon.
+      - key: DATABASE_URL
+        sync: false
+      # Fylls i när tjänsten skapas: lösenordet för admin@example.se i testmiljön.
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
