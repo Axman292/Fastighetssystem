@@ -280,6 +280,34 @@ export async function seedDemo(email: string, password: string, log = console.lo
       }
     }
 
+    // ---------- Leverantörer och leverantörsfakturor ----------
+    await s.post('/auth/switch-company', { companyId: pdf });
+    const props = await s.get<{ id: string; name: string; category: string }[]>('/properties');
+    const supplier = (body: Json) => s.post<{ id: string }>('/suppliers', { bankgiro: '5050-1055', paymentTermsDays: 30, ...body });
+    const energy = await supplier({ name: 'Skånes Energi Exempel AB', defaultAccount: '5130' });
+    const care = await supplier({ name: 'Fastighetsservice Demo AB', defaultAccount: '5193' });
+    const builder = await supplier({ name: 'Byggfirman Påhittad AB', defaultAccount: '5170', paymentTermsDays: 20 });
+    let invoiceSerial = 5000;
+    const supplierInvoice = async (supplierId: string, date: string, lines: Json[], status: 'registered' | 'approved' | 'paid') => {
+      const net = lines.reduce((t, l) => t + (l.net as number), 0);
+      const vat = lines.reduce((t, l) => t + ((l.vat as number) ?? 0), 0);
+      const r = await s.post<{ id: string }>('/supplier-invoices', { supplierId, invoiceNr: String(invoiceSerial++), invoiceDate: date, net, vat, lines });
+      if (status !== 'registered') await s.post(`/supplier-invoices/${r.id}/approve`, {});
+      if (status === 'paid') await s.post(`/supplier-invoices/${r.id}/payments`, { paidDate: date });
+    };
+    const coded = (account: string, net: number, description: string) =>
+      props.slice(0, 2).map((p, i) => {
+        const part = Math.round(net * (i === 0 ? 0.6 : 0.4));
+        const residential = p.category === 'residential';
+        return { accountNumber: account, propertyId: p.id, net: part, vat: part / 4, vatDeductible: !residential, description };
+      });
+    for (const [i, month] of months.slice(0, 3).entries()) {
+      const status = i < 2 ? 'paid' : 'registered';
+      await supplierInvoice(energy.id, `${month}-05`, coded('5130', 18000 - i * 2000, 'Fjärrvärme'), status);
+      await supplierInvoice(care.id, `${month}-01`, coded('5193', 9000, 'Fastighetsskötsel'), i < 2 ? 'paid' : 'approved');
+    }
+    await supplierInvoice(builder.id, `${months[1]}-14`, coded('5170', 24000, 'Byte av ytterdörrar'), 'approved');
+
     log(
       `Demodata upplagd: 4 fastigheter, ${contracts.length} avtal och avier för ${months[0]} till ${months[months.length - 1]}.`,
     );

@@ -203,3 +203,50 @@ export const REMINDER_STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 
 export const REMINDER_LEVEL_LABEL = ['', 'Påminnelse 1', 'Påminnelse 2'];
+
+export const SUPPLIER_INVOICE_STATUS: Record<string, { label: string; tone: Tone }> = {
+  registered: { label: 'Att attestera', tone: 'accent' },
+  approved: { label: 'Attesterad', tone: 'warn' },
+  paid: { label: 'Betald', tone: 'good' },
+  cancelled: { label: 'Makulerad', tone: 'neutral' },
+};
+
+export const SUPPLIER_PAYMENT_METHOD_LABEL: Record<string, string> = {
+  bankgiro: 'Bankgiro',
+  plusgiro: 'Plusgiro',
+  bank_transfer: 'Banköverföring',
+  autogiro: 'Autogiro',
+  card: 'Kort',
+  offset: 'Kvittning',
+  other: 'Annat',
+};
+
+export const REPORT_GROUP_LABEL: Record<string, string> = {
+  rent_income: 'Hyresintäkter',
+  other_income: 'Övriga intäkter',
+  operating: 'Driftkostnader',
+  maintenance: 'Underhåll',
+  property_tax: 'Fastighetsskatt',
+  insurance: 'Försäkringar',
+  admin: 'Administration och förvaltning',
+  interest: 'Räntekostnader',
+  investment: 'Investeringar',
+  none: 'Ingår inte i fastighetens resultat',
+};
+
+export const INCOME_GROUPS = ['rent_income', 'other_income'];
+
+/** Perioder att välja bland i ekonomiska rapporter. */
+export function periodOptions(year: number): { key: string; label: string; from: string; to: string }[] {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const last = (m: number) => new Date(Date.UTC(year, m, 0)).getUTCDate();
+  const out = [{ key: 'year', label: `Helår ${year}`, from: `${year}-01-01`, to: `${year}-12-31` }];
+  for (let q = 1; q <= 4; q++) {
+    out.push({ key: `q${q}`, label: `Kvartal ${q}`, from: `${year}-${pad(q * 3 - 2)}-01`, to: `${year}-${pad(q * 3)}-${last(q * 3)}` });
+  }
+  for (let m = 1; m <= 12; m++) {
+    const name = MONTH_LABEL[m - 1];
+    out.push({ key: `m${m}`, label: name[0].toUpperCase() + name.slice(1), from: `${year}-${pad(m)}-01`, to: `${year}-${pad(m)}-${last(m)}` });
+  }
+  return out;
+}

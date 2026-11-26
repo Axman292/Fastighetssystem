@@ -2,7 +2,7 @@
 
 Affärssystem för fastighetsförvaltning: fastigheter, hyresobjekt, hyresgäster, avtal, avisering, ekonomi och koppling till Hogia Redovisning. Byggt för en koncern med flera fastighetsägande bolag.
 
-Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i sex faser. Fas 1–4 (grund, fastigheter, hyresgäster och avtal, avisering och fakturering) är klara.
+Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i faser. Fas 1–6 (grund, fastigheter, hyresgäster och avtal, avisering och fakturering, inbetalningar och reskontra, leverantörer och fastighetsekonomi) är klara.
 
 ## Vad som finns i fas 1
 
@@ -66,6 +66,21 @@ Filen hämtas i dag i internetbanken och läses in för hand. Inläsningen är s
 ### Utskick
 
 E-post skickas via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) är satt. Utan SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. E-faktura sparas på samma sätt som XML tills en Peppol-accesspunkt är ansluten.
+
+## Vad som finns i fas 6
+
+- **Kontoplan.** Varje bolag får ett urval BAS-konton för fastighetsbolag (även nya bolag). Konton kan läggas till och kompletteras från Hogia via importcentralen. Varje konto hör till en rapportgrupp (hyresintäkter, drift, underhåll, fastighetsskatt, försäkring, administration, räntor, investeringar) som bestäms av kontonumret men kan ändras.
+- **Leverantörsregister** med löpnummer, organisationsnummer, bankgiro och plusgiro (kontrollsiffran kontrolleras), betalningsvillkor och standardkonto.
+- **Leverantörsfakturor.** Registrering med löpnummer, förfallodag från villkoren, OCR, kreditfakturor och öresavrundning. Konteringen görs per rad på konto, fastighet, objekt och kostnadsställe, med period när fakturan avser flera månader. För bostäder är momsen inte avdragsgill och räknas som kostnad. Nya fakturor får konteringsförslag från leverantörens senaste faktura.
+- **Attest och betalning.** Attest kräver att konteringen summerar till fakturan och låser den. Betalningar (även delbetalningar) registreras på attesterade fakturor. Makulering med orsak. Fakturan bifogas som PDF eller bild och sparas i sju år. Varje steg loggas på fakturan.
+- **Leverantörsreskontra** med åldersanalys per leverantör, och listor för att attestera, att betala och förfallet.
+- **Bokföringsunderlag** visas per faktura (kostnadskonton, ingående moms 2640, leverantörsskuld 2440) så att en senare export till Hogia kan göras utan dubbelposter. Inget skickas till Hogia ännu.
+- **Resultat per fastighet** för valfri period: hyresintäkter, övriga intäkter, drift, underhåll, fastighetsskatt, försäkring, administration, driftnetto, räntor och resultat efter räntor. Intäkterna kommer från utfärdade avier och fakturor, kostnaderna från leverantörsfakturor, fördelade per dag på den period de avser. Saknas bokad fastighetsskatt, försäkring eller ränta beräknas den ur fastighetsregistret och märks som beräknad.
+- **Nyckeltal:** direktavkastning (driftnetto i helårstakt på senaste marknadsvärdet), ekonomisk vakansgrad (hyresvärde som inte täcks av avtal), hyresintäkt och kostnad per m², och per månad.
+- **Budget** per fastighet, år och rapportgrupp, med föregående års utfall som stöd. Budget mot utfall visas i resultaträkningen.
+- **Ekonomi:** jämförelse av fastigheter och bolag, och koncernen totalt, med sortering på driftnetto, avkastning, vakans, kostnad per m² och avvikelse mot budget.
+
+Databasen hindrar att samma leverantörsfaktura registreras två gånger, att en attesterad faktura eller dess kontering ändras, att en faktura attesteras med kontering som inte stämmer och att mer betalas än fakturans belopp.
 
 ## Struktur
 
