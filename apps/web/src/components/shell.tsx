@@ -20,6 +20,7 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
 ];
 
 const admin = [
+  { href: '/import', label: 'Importcentral', icon: <Icon d="M10 3v9M6 8l4 4 4-4M4 14v3h12v-3" /> },
   { href: '/anvandare', label: 'Användare', icon: <Icon d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 16c0-3 3-4.5 6-4.5s6 1.5 6 4.5M14 4a2.5 2.5 0 0 1 0 5M16 11.5c1.5.5 2.5 1.8 2.5 4" /> },
   { href: '/logg', label: 'Revisionslogg', icon: <Icon d="M10 4v6l4 2M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" /> },
 ];
