@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { parse } from '../common/validation';
@@ -58,7 +58,7 @@ export class AuthController {
   switchCompany(@Ctx() ctx: RequestContext, @Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const { companyId } = parse(switchSchema, body);
     if (companyId !== ALL_COMPANIES && !ctx.access.some((a) => a.companyId === companyId)) {
-      return res.status(403).json({ message: 'Du har inte tillgång till bolaget' });
+      throw new ForbiddenException('Du har inte tillgång till bolaget');
     }
     res.cookie(COMPANY_COOKIE, companyId, { ...cookieOptions(), maxAge: 365 * 24 * 3600_000 });
     return { activeCompanyId: companyId === ALL_COMPANIES ? null : companyId };

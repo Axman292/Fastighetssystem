@@ -1,51 +1,23 @@
-import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
-import { Client } from 'pg';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ADMIN_PW, login as loginAs, startApp } from './helpers';
 
 /**
  * Fas 1 är klar när två bolag kan läggas upp och data inte syns mellan dem.
  * Testerna kör mot en riktig PostgreSQL-databas som skapas på nytt varje gång.
  */
-const baseUrl = process.env.TEST_DATABASE_URL ?? 'postgres://postgres@localhost:5432/postgres';
-const testDb = 'fastighet_test';
-const dbUrl = baseUrl.replace(/\/[^/]*$/, `/${testDb}`);
-
 let app: INestApplication;
+let stop: () => Promise<void>;
 let http: ReturnType<typeof request>;
-const ADMIN_PW = 'admin-lösenord-123';
-
-async function login(email: string, password: string) {
-  const agent = request.agent(app.getHttpServer());
-  await agent.post('/auth/login').send({ email, password }).expect(200);
-  return agent;
-}
+const login = (email: string, password: string) => loginAs(app, email, password);
 
 beforeAll(async () => {
-  const admin = new Client({ connectionString: baseUrl });
-  await admin.connect();
-  await admin.query(`drop database if exists ${testDb} with (force)`);
-  await admin.query(`create database ${testDb}`);
-  await admin.end();
-
-  process.env.DATABASE_URL = dbUrl;
-  const { migrate } = await import('../src/scripts/migrate');
-  const { seed } = await import('../src/scripts/seed');
-  await migrate(dbUrl, () => undefined);
-  await seed(dbUrl, ADMIN_PW, () => undefined);
-
-  const { createApp } = await import('../src/app');
-  app = await createApp();
-  await app.init();
+  ({ app, stop } = await startApp('fastighet_test'));
   http = request(app.getHttpServer());
 });
 
-afterAll(async () => {
-  await app?.close();
-  const { closePool } = await import('../src/db/db');
-  await closePool();
-});
+afterAll(async () => stop());
 
 describe('inloggning', () => {
   it('nekar fel lösenord och oinloggade anrop', async () => {

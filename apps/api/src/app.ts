@@ -10,6 +10,9 @@ import { DbErrorsFilter } from './common/db-errors.filter';
 import { CompaniesController } from './companies/companies.controller';
 import { HealthController } from './health.controller';
 import { RegisterController } from './register/register.controller';
+import { PropertiesController } from './properties/properties.controller';
+import { ObjectsController } from './properties/objects.controller';
+import { ImportController } from './properties/import.controller';
 import { UsersController } from './users/users.controller';
 
 @Module({
@@ -20,6 +23,9 @@ import { UsersController } from './users/users.controller';
     RegisterController,
     UsersController,
     AuditController,
+    PropertiesController,
+    ObjectsController,
+    ImportController,
   ],
   providers: [
     AuthService,
