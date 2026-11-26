@@ -90,6 +90,10 @@ pnpm dev                      # API på :4000, webb på http://localhost:3000
 
 Seed-skriptet lägger upp koncernen med P Dahlqvist Förvaltning AB, HPK AB och Hardebergabanan AB samt användaren `admin@example.se`. **Organisationsnumren i seed-data är påhittade** och ska ersättas med de riktiga under Bolag.
 
+## Testmiljö på nätet
+
+En gratis testmiljö med påhittade data kan sättas upp på Render och Neon (båda i Frankfurt). Se [deploy/TESTMILJO.md](deploy/TESTMILJO.md). Lokalt fylls samma demodata i med `SEED_ADMIN_PASSWORD=... node apps/api/dist/scripts/seed-demo.js` efter `pnpm db:seed`.
+
 ## Tester
 
 Testerna kör mot en riktig PostgreSQL-databas (`fastighet_test` skapas och tas bort automatiskt):
