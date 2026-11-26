@@ -23,8 +23,21 @@ export class DbErrorsFilter implements ExceptionFilter {
       res.status(403).json({ message: 'Databasen nekade åtkomst till bolaget' });
       return;
     }
-    if (code === '23514' || code === '22P02') {
+    if (code === '23514') {
+      const msg = (err as { message?: string }).message ?? '';
+      res.status(400).json({ message: msg.includes('violates check constraint') ? 'Ogiltiga uppgifter' : msg });
+      return;
+    }
+    if (code === '22P02') {
       res.status(400).json({ message: 'Ogiltiga uppgifter' });
+      return;
+    }
+    if (code === '23503') {
+      res.status(400).json({ message: 'Uppgiften hänvisar till något som inte finns i valt bolag' });
+      return;
+    }
+    if (code === '23P01') {
+      res.status(409).json({ message: 'Perioden överlappar en befintlig period' });
       return;
     }
     this.log.error(exception);

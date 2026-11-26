@@ -2,7 +2,7 @@
 
 Affärssystem för fastighetsförvaltning: fastigheter, hyresobjekt, hyresgäster, avtal, avisering, ekonomi och koppling till Hogia Redovisning. Byggt för en koncern med flera fastighetsägande bolag.
 
-Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i sex faser; det här är **fas 1, grunden**.
+Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssystem – arkitektur och databasmodell*. Systemet byggs i sex faser. Fas 1 (grunden) och fas 2 (fastigheter och hyresobjekt) är klara.
 
 ## Vad som finns i fas 1
 
@@ -13,6 +13,15 @@ Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssyste
 - **Revisionslogg.** Varje ändring loggas av databasen själv med vem, när, före och efter. Lösenord loggas aldrig.
 - **Bankkonton och kostnadsställen** per bolag.
 - **Designsystem** och grundlayout (sidomeny, startsida, tabeller, formulär, dialoger).
+
+## Vad som finns i fas 2
+
+- **Fastighetsregister** med beteckning, kategori, adress, byggår, BOA, LOA, BTA, tomtarea och förvärv.
+- **Underregister per fastighet:** byggnader, taxering och fastighetsskatt, marknadsvärdering, lån, försäkring, tekniska uppgifter och underhållsplan.
+- **Fastighetsöversikt** med antal objekt, uthyrningsbar area, hyresvärde och kr/m², marknadsvärde och belåningsgrad.
+- **Hyresobjekt** (lägenhet, lokal, kontor, restaurang, parkering, förråd, hotellrum med flera). Hyra och momsstatus lagras med giltighetsperiod. En ny hyra avslutar den föregående, och historiken skrivs aldrig över. Bostäder kan aldrig bli momspliktiga, vilket både API:et och databasen kontrollerar.
+- **Import från Excel** med nedladdningsbar mall. Filen kontrolleras rad för rad och förhandsgranskas, och sedan sparas allt i en transaktion. Rader som redan finns hoppas över.
+- Objektens status (uthyrd, ledig, kommande ledig) räknas fram från avtalen i fas 3.
 
 ## Struktur
 
@@ -56,4 +65,4 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 
 ## Nästa fas
 
-Fas 2: fastighetsregister och hyresobjekt (fastigheter, byggnader, objekt, hyror och momsstatus över tid, import från Excel).
+Fas 3: kunder och avtal (kundregister, hyresavtal, avtalsrader, indexklausuler, depositioner, avtalsmallar med PDF och avtalsöversikt).

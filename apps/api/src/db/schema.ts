@@ -9,6 +9,9 @@ import {
   bigint,
   jsonb,
   primaryKey,
+  numeric,
+  integer,
+  pgView,
 } from 'drizzle-orm/pg-core';
 
 const audit = {
@@ -118,3 +121,158 @@ export const auditLog = pgTable('audit_log', {
   after: jsonb('after'),
   requestId: text('request_id'),
 });
+
+// ---------------------------------------------------------------------
+// Fas 2: fastigheter och hyresobjekt
+// ---------------------------------------------------------------------
+
+const num = (name: string) => numeric(name, { mode: 'number' });
+const sek = (name: string) => bigint(name, { mode: 'number' });
+
+export const property = pgTable('property', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  name: text('name').notNull(),
+  designation: text('designation').notNull(),
+  municipality: text('municipality'),
+  addressLine: text('address_line'),
+  postalCode: text('postal_code'),
+  city: text('city'),
+  category: text('category').notNull(),
+  constructionYear: smallint('construction_year'),
+  areaBoaM2: num('area_boa_m2'),
+  areaLoaM2: num('area_loa_m2'),
+  areaBtaM2: num('area_bta_m2'),
+  siteAreaM2: num('site_area_m2'),
+  costCenterId: uuid('cost_center_id'),
+  acquiredDate: date('acquired_date'),
+  acquisitionPriceSek: sek('acquisition_price_sek'),
+  soldDate: date('sold_date'),
+  notes: text('notes'),
+  ...audit,
+});
+
+const child = {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  propertyId: uuid('property_id').notNull(),
+};
+
+export const building = pgTable('building', {
+  ...child,
+  name: text('name').notNull(),
+  addressLine: text('address_line'),
+  constructionYear: smallint('construction_year'),
+  energyClass: text('energy_class'),
+  floors: smallint('floors'),
+  ...audit,
+});
+
+export const propertyTaxAssessment = pgTable('property_tax_assessment', {
+  ...child,
+  assessmentYear: smallint('assessment_year').notNull(),
+  typeCode: text('type_code'),
+  landValueSek: sek('land_value_sek'),
+  buildingValueSek: sek('building_value_sek'),
+  propertyTaxOre: sek('property_tax_ore'),
+  ...audit,
+});
+
+export const propertyInsurance = pgTable('property_insurance', {
+  ...child,
+  insurer: text('insurer').notNull(),
+  policyNr: text('policy_nr'),
+  sumInsuredSek: sek('sum_insured_sek'),
+  premiumOre: sek('premium_ore'),
+  validFrom: date('valid_from').notNull(),
+  validTo: date('valid_to'),
+  ...audit,
+});
+
+export const propertyValuation = pgTable('property_valuation', {
+  ...child,
+  valuationDate: date('valuation_date').notNull(),
+  valueSek: sek('value_sek').notNull(),
+  valuer: text('valuer'),
+  method: text('method'),
+  ...audit,
+});
+
+export const propertyLoan = pgTable('property_loan', {
+  ...child,
+  lender: text('lender').notNull(),
+  loanNr: text('loan_nr'),
+  principalOre: sek('principal_ore').notNull(),
+  interestBp: integer('interest_bp'),
+  fixedUntil: date('fixed_until'),
+  amortizationOrePerYear: sek('amortization_ore_per_year'),
+  ...audit,
+});
+
+export const propertyTechnical = pgTable('property_technical', {
+  ...child,
+  heating: text('heating'),
+  ventilation: text('ventilation'),
+  elevators: smallint('elevators'),
+  ovkDate: date('ovk_date'),
+  energyDeclarationDate: date('energy_declaration_date'),
+  energyUseKwhM2: num('energy_use_kwh_m2'),
+  notes: text('notes'),
+  ...audit,
+});
+
+export const maintenancePlanItem = pgTable('maintenance_plan_item', {
+  ...child,
+  component: text('component').notNull(),
+  plannedYear: smallint('planned_year').notNull(),
+  estimatedCostOre: sek('estimated_cost_ore'),
+  status: text('status').notNull().default('planned'),
+  notes: text('notes'),
+  ...audit,
+});
+
+export const rentalObject = pgTable('rental_object', {
+  ...child,
+  buildingId: uuid('building_id'),
+  objectNr: text('object_nr').notNull(),
+  type: text('type').notNull(),
+  areaM2: num('area_m2'),
+  rooms: num('rooms'),
+  floor: smallint('floor'),
+  apartmentNr: text('apartment_nr'),
+  addressLine: text('address_line'),
+  description: text('description'),
+  active: boolean('active').notNull().default(true),
+  ...audit,
+});
+
+export const rentalObjectPrice = pgTable('rental_object_price', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  objectId: uuid('object_id').notNull(),
+  monthlyRentOre: sek('monthly_rent_ore').notNull(),
+  validFrom: date('valid_from').notNull(),
+  validTo: date('valid_to'),
+  reason: text('reason'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+});
+
+export const rentalObjectVat = pgTable('rental_object_vat', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').notNull(),
+  objectId: uuid('object_id').notNull(),
+  vatLiable: boolean('vat_liable').notNull(),
+  validFrom: date('valid_from').notNull(),
+  validTo: date('valid_to'),
+  note: text('note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+});
+
+export const rentalObjectCurrent = pgView('rental_object_current', {
+  objectId: uuid('object_id').notNull(),
+  companyId: uuid('company_id').notNull(),
+  monthlyRentOre: sek('monthly_rent_ore'),
+  vatLiable: boolean('vat_liable'),
+}).existing();

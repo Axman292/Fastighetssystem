@@ -120,7 +120,7 @@ export function Td({ children, className }: { children?: ReactNode; className?: 
   return <td className={cx('h-10 px-4', className)}>{children}</td>;
 }
 
-export function Dialog({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+export function Dialog({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -129,8 +129,8 @@ export function Dialog({ open, onClose, title, children }: { open: boolean; onCl
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-ink/20 p-4 pt-[12vh]" onMouseDown={onClose}>
-      <div role="dialog" aria-label={title} className="w-full max-w-md rounded-lg bg-surface shadow-pop" onMouseDown={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/20 p-4 pt-[8vh]" onMouseDown={onClose}>
+      <div role="dialog" aria-label={title} className={cx('w-full rounded-lg bg-surface shadow-pop', wide ? 'max-w-2xl' : 'max-w-md')} onMouseDown={(e) => e.stopPropagation()}>
         <div className="border-b border-line px-5 py-3.5 text-[14px] font-semibold">{title}</div>
         <div className="p-5">{children}</div>
       </div>
@@ -153,5 +153,37 @@ export function Logo() {
       <rect width="24" height="24" rx="6" fill="var(--color-accent)" />
       <path d="M6 17V10l6-4 6 4v7h-4v-4h-4v4z" fill="white" />
     </svg>
+  );
+}
+
+export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { key: T; label: string; count?: number }[]; value: T; onChange: (t: T) => void }) {
+  return (
+    <div className="mb-5 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          role="tab"
+          aria-selected={value === t.key}
+          onClick={() => onChange(t.key)}
+          className={cx(
+            '-mb-px flex h-9 shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-[13px] font-medium',
+            value === t.key ? 'border-accent text-ink' : 'border-transparent text-ink-3 hover:text-ink',
+          )}
+        >
+          {t.label}
+          {t.count !== undefined && <span className="rounded bg-subtle px-1 text-[11px] text-ink-3">{t.count}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+  return (
+    <Card className="px-4 py-3.5">
+      <div className="text-[12px] text-ink-3">{label}</div>
+      <div className="mt-1 text-[20px] font-semibold tabular tracking-[-0.01em]">{value}</div>
+      {sub && <div className="mt-0.5 text-[12px] text-ink-3">{sub}</div>}
+    </Card>
   );
 }
