@@ -10,6 +10,7 @@ import { api, ApiError } from '@/lib/api';
 import { contactFields, customerFields, customerInvoiceFields } from '@/lib/fields';
 import { CONTRACT_TYPE_LABEL, DELIVERY_LABEL, contractStatus, fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { InvoiceRow, InvoiceTable } from '@/components/invoice-table';
 
 interface Contact {
   id: string;
@@ -55,6 +56,12 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
   const [error, setError] = useState<string | null>(null);
   const [contact, setContact] = useState<Contact | 'new' | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [invoices, setInvoices] = useState<InvoiceRow[] | null>(null);
+  const [payments, setPayments] = useState<{ amountOre: number; allocatedOre: number }[] | null>(null);
+  useEffect(() => {
+    api<InvoiceRow[]>(`/invoices?customerId=${id}`).then(setInvoices);
+    api<{ amountOre: number; allocatedOre: number }[]>(`/payments?customerId=${id}`).then(setPayments);
+  }, [id]);
 
   const load = useCallback(() => {
     api<CustomerDetail>(`/customers/${id}`).then(setC).catch((e: ApiError) => setError(e.message));
@@ -67,6 +74,9 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
   const live = c.contracts.filter((k) => ['Aktivt', 'Uppsagt', 'Kommande'].includes(contractStatus(k).label));
   const monthly = live.reduce((s, k) => s + k.monthlyOre, 0);
   const opts = { companyId: c.companyId };
+  const unpaid = (invoices ?? []).filter((i) => i.kind !== 'credit_note' && i.status === 'issued' && i.balanceOre > 0);
+  const open = unpaid.reduce((s, i) => s + i.balanceOre, 0);
+  const overdue = unpaid.filter((i) => i.state === 'overdue').reduce((s, i) => s + i.balanceOre, 0);
 
   return (
     <>
@@ -92,7 +102,11 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
         <Stat label="Gällande avtal" value={live.length} />
         <Stat label="Hyra per månad" value={fmtOre(monthly)} sub="exkl. moms" />
         <Stat label="Fakturor skickas med" value={<span className="text-[16px]">{DELIVERY_LABEL[c.deliveryMethod]}</span>} sub={`${c.paymentTermsDays} dagars betalningsvillkor`} />
-        <Stat label="Obetalt" value={<span className="text-[16px] text-ink-3">Fas 5</span>} sub="Reskontra kommer med ekonomin" />
+        <Stat
+          label="Obetalt"
+          value={invoices ? fmtOre(open) : '–'}
+          sub={invoices ? (overdue ? `varav ${fmtOre(overdue)} förfallet` : unpaid.length === 1 ? '1 obetald faktura' : `${unpaid.length} obetalda fakturor`) : undefined}
+        />
       </div>
 
       <section className="mb-10">
@@ -118,6 +132,23 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
             );
           })}
         </Table>
+      </section>
+
+      <section className="mb-10">
+        <SectionHeader
+          title="Fakturor"
+          description={payments && payments.some((p) => p.allocatedOre < p.amountOre) ? `Ej fördelade inbetalningar: ${fmtOre(payments.reduce((s, p) => s + p.amountOre - p.allocatedOre, 0), true)}` : undefined}
+          actions={
+            can('invoice.write', c.companyId) && (
+              <Link href={`/fakturor/ny?customerId=${id}`}>
+                <Button size="sm" variant="secondary">
+                  Ny faktura
+                </Button>
+              </Link>
+            )
+          }
+        />
+        <InvoiceTable rows={invoices ?? []} showCustomer={false} empty="Inga fakturor ännu." />
       </section>
 
       <div className="grid grid-cols-[3fr_2fr] gap-6">

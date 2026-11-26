@@ -5,6 +5,15 @@ import { use, useCallback, useEffect, useState, FormEvent } from 'react';
 import { Badge, Button, Card, Dialog, ErrorNote, Field, Input, PageHeader, Select, Table, Td, formatDateTime } from '@/components/ui';
 import { api, ApiError, AuditRow, BankAccount, Company, CostCenter } from '@/lib/api';
 import { useSession } from '@/lib/session';
+import { EditForm, SectionHeader } from '@/components/edit-form';
+import type { FieldDef as FormFieldDef } from '@/components/form';
+
+const invoiceSettingsFields: FormFieldDef[] = [
+  { key: 'invoiceEmail', label: 'E-post för fakturor', half: true, hint: 'Avsändare och svarsadress för avier' },
+  { key: 'invoiceFooter', label: 'Text längst ned på fakturan', half: true },
+  { key: 'fTax', label: 'Godkänd för F-skatt', type: 'checkbox' },
+  { key: 'roundToKrona', label: 'Avrunda fakturor till hela kronor', type: 'checkbox' },
+];
 
 const purposes: Record<string, string> = {
   rent: 'Hyresinbetalningar',
@@ -44,6 +53,16 @@ export default function CompanyPage({ params }: { params: Promise<{ id: string }
       <div className="grid grid-cols-[1fr_320px] gap-6">
         <div className="space-y-8">
           <CompanyForm company={company} editable={editable} onSaved={setCompany} />
+          <section>
+            <SectionHeader title="Fakturering" description="Uppgifter som visas på hyresavier och fakturor." />
+            <EditForm
+              key={company.updatedAt}
+              fields={invoiceSettingsFields}
+              row={company as unknown as Record<string, unknown>}
+              editable={editable}
+              save={async (body) => setCompany(await api<Company>(`/companies/${id}`, { method: 'PATCH', body }))}
+            />
+          </section>
           <BankAccounts companyId={id} editable={can('bank_account.write', id)} />
           <CostCenters companyId={id} editable={can('cost_center.write', id)} />
         </div>

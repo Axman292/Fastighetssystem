@@ -17,6 +17,9 @@ import { UsersController } from './users/users.controller';
 import { CustomersController } from './customers/customers.controller';
 import { ContractsController } from './contracts/contracts.controller';
 import { KpiController } from './contracts/kpi.controller';
+import { BillingRunsController } from './billing/billing-runs.controller';
+import { InvoicesController, PaymentsController } from './billing/invoices.controller';
+import { ChargesController } from './billing/charges.controller';
 
 @Module({
   controllers: [
@@ -32,6 +35,10 @@ import { KpiController } from './contracts/kpi.controller';
     CustomersController,
     ContractsController,
     KpiController,
+    ChargesController,
+    BillingRunsController,
+    InvoicesController,
+    PaymentsController,
   ],
   providers: [
     AuthService,

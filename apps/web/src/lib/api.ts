@@ -60,6 +60,10 @@ export interface Company {
   plusgiro: string | null;
   fiscalYearStart: number;
   hogiaClientId: string | null;
+  invoiceEmail: string | null;
+  fTax: boolean;
+  invoiceFooter: string | null;
+  roundToKrona: boolean;
   active: boolean;
   updatedAt: string;
 }

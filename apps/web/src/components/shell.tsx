@@ -14,7 +14,8 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/objekt', label: 'Objekt', icon: <Icon d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z" /> },
   { href: '/kunder', label: 'Hyresgäster', icon: <Icon d="M10 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 17c0-3 3-5 6-5s6 2 6 5" /> },
   { href: '/avtal', label: 'Avtal', icon: <Icon d="M6 3h6l3 3v11H6zM9 9h4M9 12h4" /> },
-  { href: '#', label: 'Avisering', icon: <Icon d="M4 6h12v9H4zM4 6l6 5 6-5" />, soon: true },
+  { href: '/avisering', label: 'Avisering', icon: <Icon d="M4 6h12v9H4zM4 6l6 5 6-5" /> },
+  { href: '/fakturor', label: 'Fakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3" /> },
   { href: '#', label: 'Ekonomi', icon: <Icon d="M4 16V9M8 16V5M12 16v-5M16 16V7" />, soon: true },
 ];
 

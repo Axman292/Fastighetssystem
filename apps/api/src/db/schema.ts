@@ -40,6 +40,10 @@ export const company = pgTable('company', {
   plusgiro: text('plusgiro'),
   fiscalYearStart: smallint('fiscal_year_start').notNull().default(1),
   hogiaClientId: text('hogia_client_id'),
+  invoiceEmail: text('invoice_email'),
+  fTax: boolean('f_tax').notNull().default(true),
+  invoiceFooter: text('invoice_footer'),
+  roundToKrona: boolean('round_to_krona').notNull().default(true),
   active: boolean('active').notNull().default(true),
   ...audit,
 });
