@@ -1,5 +1,5 @@
 import type { PoolClient } from 'pg';
-import { INCOME_GROUPS, OPEX_GROUPS, REPORT_GROUP_LABEL, ReportGroup, RENT_ARTICLES, reportGroupOf } from './report-groups';
+import { INCOME_GROUPS, OPEX_GROUPS, REPORT_GROUP_LABEL, ReportGroup, incomeGroupOf, reportGroupOf } from './report-groups';
 
 /**
  * Ekonomisk uppföljning per fastighet för en period.
@@ -137,16 +137,19 @@ export async function computeEconomy(client: PoolClient, period: Period, propert
   const pT = 'coalesce(l.period_to, l.period_from, i.invoice_date)';
   const income = (
     await client.query(
-      `select l.property_id as id, (l.article = any ($4::text[])) as rent, sum(${share('l.net_ore', pF, pT)})::float as amount
+      `select l.property_id as id, coalesce(l.account_number, ar.account_number) as account, acc.report_group as "override",
+              sum(${share('l.net_ore', pF, pT)})::float as amount
        from invoice_line l join invoice i on i.id = l.invoice_id join property p on p.id = l.property_id
+       left join article ar on ar.company_id = l.company_id and ar.code = l.article
+       left join account acc on acc.company_id = l.company_id and acc.number = coalesce(l.account_number, ar.account_number)
        where i.status = 'issued' and ${overlaps(pF, pT)} and ${pf}
-       group by l.property_id, rent`,
-      [...params, RENT_ARTICLES],
+       group by l.property_id, 2, 3`,
+      params,
     )
   ).rows;
   for (const r of income) {
     const e = map.get(r.id);
-    if (e) e.actual[r.rent ? 'rent_income' : 'other_income'] += r.amount;
+    if (e) e.actual[incomeGroupOf(r.account, r.override)] += r.amount;
   }
 
   // Kostnader från leverantörsfakturor

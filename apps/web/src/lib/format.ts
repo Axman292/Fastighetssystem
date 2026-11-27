@@ -92,22 +92,6 @@ export const OBJECT_STATUS: Record<string, { label: string; tone: Tone }> = {
   inactive: { label: 'Inaktiv', tone: 'neutral' },
 };
 
-export const ARTICLE_LABEL: Record<string, string> = {
-  rent: 'Hyra',
-  heating: 'Värme',
-  electricity: 'El',
-  water: 'Vatten',
-  parking: 'Parkering',
-  storage: 'Förråd',
-  service: 'Tjänst',
-  index: 'Indextillägg',
-  discount: 'Rabatt',
-  other: 'Övrigt',
-};
-
-/** Artiklar på fakturor och extra debiteringar (avgift finns inte på avtalsrader). */
-export const INVOICE_ARTICLE_LABEL: Record<string, string> = { ...ARTICLE_LABEL, fee: 'Avgift' };
-
 export const VAT_LABEL: Record<string, string> = { '0': 'Momsfri', '600': '6 %', '1200': '12 %', '2500': '25 %' };
 
 export const DEPOSIT_LABEL: Record<string, string> = {

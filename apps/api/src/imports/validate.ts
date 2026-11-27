@@ -375,6 +375,7 @@ interface Existing {
   documents: Map<string, string>;
   vouchers: Map<string, any>;
   invoices: any[];
+  articles: { code: string; name: string; active: boolean; vat_rate_bp: number | null }[];
 }
 
 async function loadExisting(client: PoolClient, sourceSystem: string): Promise<Existing> {
@@ -405,6 +406,9 @@ async function loadExisting(client: PoolClient, sourceSystem: string): Promise<E
     accounts: new Map((await q('select id, number, name, type, sru_code, vat_code from account')).map((r) => [r.number, r])),
     suppliers: await q('select id, supplier_nr, name, org_nr, bankgiro, plusgiro, email, phone, address_line, postal_code, city, payment_terms_days from supplier'),
     documents: new Map((await q('select sha256, id from document')).map((r) => [r.sha256, r.id])),
+    articles: (await q(`select to_regclass('article') is not null as ok`))[0].ok
+      ? await q('select code, name, active, vat_rate_bp from article order by position')
+      : [],
     invoices: (await q(`select to_regclass('invoice') is not null as ok`))[0].ok
       ? await q(`select i.id, i.invoice_nr::text, i.customer_id, i.total_ore::float, i.ocr, b.balance_ore::float
                  from invoice i left join invoice_balance b on b.invoice_id = i.id`)
@@ -806,7 +810,7 @@ export async function validateBatch(client: PoolClient, batch: BatchInfo, decisi
         objectNr: o?.nr ?? null,
         amountOre: a.amountOre,
         vatRateBp: a.vatLiable ? 2500 : 0,
-        article: addonArticle(a.description),
+        article: addonArticle(a.description, ex.articles),
         description: a.description,
         addon: true,
       });
@@ -1116,14 +1120,26 @@ export function summarize(recs: Rec[]) {
   return out;
 }
 
-/** Artikel för ett tillägg på avtalet, efter texten. */
-export function addonArticle(description: string): string {
+/**
+ * Artikel för ett tillägg på avtalet, efter texten. En artikel i bolagets
+ * artikelregister med samma namn väljs först, annars gissas artikeln av
+ * texten. Finns den gissade artikeln inte i registret blir det Övrigt.
+ */
+export function addonArticle(description: string, articles?: { code: string; name: string; active: boolean }[]): string {
   const t = norm(description);
-  if (/bredband|kabel|tv|internet|fiber/.test(t)) return 'service';
-  if (/^el\b|elektricitet|hushallsel/.test(t)) return 'electricity';
-  if (/varme|uppvarmning/.test(t)) return 'heating';
-  if (/vatten/.test(t)) return 'water';
-  if (/parkering|p plats|garage/.test(t)) return 'parking';
-  if (/forrad/.test(t)) return 'storage';
-  return 'other';
+  const byName = articles?.find((a) => a.active && norm(a.name) === t) ?? articles?.find((a) => norm(a.name) === t);
+  if (byName) return byName.code;
+  const guess = (() => {
+    if (/bredband|internet|fiber/.test(t)) return ['broadband', 'service'];
+    if (/kabel|\btv\b/.test(t)) return ['cable_tv', 'service'];
+    if (/fastighetsskatt|fastighetsavgift/.test(t)) return ['property_tax', 'other'];
+    if (/^el\b|elektricitet|hushallsel/.test(t)) return ['electricity'];
+    if (/varme|uppvarmning/.test(t)) return ['heating'];
+    if (/vatten/.test(t)) return ['water'];
+    if (/parkering|p plats|garage/.test(t)) return ['parking'];
+    if (/forrad/.test(t)) return ['storage'];
+    return [];
+  })();
+  if (!articles) return guess[0] ?? 'other';
+  return guess.find((c) => articles.some((a) => a.code === c)) ?? 'other';
 }

@@ -49,6 +49,15 @@ Arkitektur och fullständig databasmodell beskrivs i dokumentet *Fastighetssyste
 
 Databasen hindrar själv att samma avtalsrad aviseras två gånger för samma dag, att en extra debitering faktureras två gånger och att en utfärdad faktura ändras eller tas bort.
 
+## Artikelregister
+
+- **Egna artiklar per bolag** under Administration → Artiklar. Lägg till artiklar (till exempel Bredband, Kabel-TV, Fastighetsskatt), döp om dem och välj intäktskonto ur kontoplanen och standardmoms.
+- **Standardartiklarna** (Hyra, Parkering, Förråd, Värme, El, Vatten, Tjänst, Indextillägg, Rabatt, Avgift, Övrigt) används av systemet och kan döpas om men inte tas bort. Befintliga avtal och fakturor behåller sina artiklar.
+- Artiklarna används på hyresrader, extra debiteringar och manuella fakturor. När en artikel väljs fylls moms och text i. Bostäder får aldrig moms.
+- **Fakturaraden sparar intäktskontot** när den skapas, så att en senare ändring av artikelns konto inte ändrar utfärdade fakturor. Kontot styr också om intäkten räknas som hyra (3910–3919) i fastighetens resultat.
+- **Importcentralen** kopplar tillägg till artikeln med samma namn, annars gissas artikeln av texten (bredband, kabel-TV, fastighetsskatt ...).
+- En använd artikel kan göras inaktiv men inte tas bort.
+
 ## Vad som finns i fas 5
 
 - **Inläsning av bankfiler.** Bankgirots inbetalningsfil (BgMax, tjänsten Bankgiro Inbetalningar) läses in under Inbetalningar. Filen kontrolleras mot bolagets bankgiro och mot filens egna summor. Betalningarna får den betalningsdag som står i filen.

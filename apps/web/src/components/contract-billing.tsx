@@ -7,7 +7,8 @@ import { FieldDef, FormDialog } from './form';
 import { InvoiceRow, InvoiceTable } from './invoice-table';
 import { Badge, Button, Table, Td } from './ui';
 import { api } from '@/lib/api';
-import { INVOICE_ARTICLE_LABEL, VAT_LABEL, fmtMonth, fmtOre, todayIso } from '@/lib/format';
+import { articleDefaults, articleOptions, useArticles } from '@/lib/articles';
+import { VAT_LABEL, fmtMonth, fmtOre, todayIso } from '@/lib/format';
 
 interface Charge {
   id: string;
@@ -35,6 +36,7 @@ export function ContractBilling({
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [open, setOpen] = useState(false);
   const opts = { companyId: contract.companyId };
+  const { articles } = useArticles();
 
   const load = useCallback(() => {
     api<Charge[]>(`/contracts/${contract.id}/charges`, opts).then(setCharges);
@@ -45,7 +47,20 @@ export function ContractBilling({
 
   const residential = contract.type === 'residential';
   const fields: FieldDef[] = [
-    { key: 'article', label: 'Artikel', type: 'select', options: INVOICE_ARTICLE_LABEL, required: true, half: true },
+    {
+      key: 'article',
+      label: 'Artikel',
+      type: 'select',
+      options: articleOptions(articles, contract.companyId),
+      required: true,
+      half: true,
+      onSelect: (code, values) => {
+        const d = articleDefaults(articles, contract.companyId, code, values, { residential });
+        // Avinstexten fylls bara i om den är tom
+        if (typeof values.description === 'string' && values.description.trim()) delete d.description;
+        return d;
+      },
+    },
     { key: 'description', label: 'Text på avin', required: true, half: true, placeholder: 'Till exempel Extra nyckel' },
     { key: 'amount', label: 'Belopp (kr, exkl. moms)', type: 'kronor', required: true, half: true, hint: 'Negativt för avdrag' },
     ...(residential ? [] : [{ key: 'vatRateBp', label: 'Moms', type: 'select' as const, options: VAT_LABEL, required: true, half: true }]),

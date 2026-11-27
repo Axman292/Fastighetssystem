@@ -1,5 +1,5 @@
 import type { FieldDef } from '@/components/form';
-import { ARTICLE_LABEL, CATEGORY_LABEL, DELIVERY_LABEL, DEPOSIT_LABEL, OBJECT_TYPE_LABEL, VAT_LABEL } from './format';
+import { CATEGORY_LABEL, DELIVERY_LABEL, DEPOSIT_LABEL, OBJECT_TYPE_LABEL, VAT_LABEL } from './format';
 
 export const propertyFields: FieldDef[] = [
   { key: 'name', label: 'Namn', required: true, half: true },
@@ -81,8 +81,9 @@ export const contractTermsFields: FieldDef[] = [
   { key: 'notes', label: 'Interna anteckningar', type: 'textarea' },
 ];
 
-export const lineFields: FieldDef[] = [
-  { key: 'article', label: 'Artikel', type: 'select', options: ARTICLE_LABEL, required: true, half: true },
+/** Fält för en hyresrad. Artiklarna kommer från bolagets artikelregister. */
+export const lineFields = (articles: Record<string, string>, onSelect?: FieldDef['onSelect']): FieldDef[] => [
+  { key: 'article', label: 'Artikel', type: 'select', options: articles, required: true, half: true, onSelect },
   { key: 'description', label: 'Text på avin', required: true, half: true },
   { key: 'amount', label: 'Belopp per månad (kr, exkl. moms)', type: 'kronor', required: true, half: true, hint: 'Negativt för rabatt' },
   { key: 'vatRateBp', label: 'Moms', type: 'select', options: VAT_LABEL, required: true, half: true },

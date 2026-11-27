@@ -3,7 +3,9 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Button, Card, ErrorNote, Field, Input, Select } from './ui';
 import { api, ApiError } from '@/lib/api';
-import { DELIVERY_LABEL, INVOICE_ARTICLE_LABEL, VAT_LABEL, fmtOre, todayIso } from '@/lib/format';
+import { articleDefaults, articleOptions, useArticles } from '@/lib/articles';
+import { useSession } from '@/lib/session';
+import { DELIVERY_LABEL, VAT_LABEL, fmtOre, todayIso } from '@/lib/format';
 
 export interface DraftLine {
   article: string;
@@ -34,6 +36,8 @@ const num = (s: string) => Number(s.replace(/\s/g, '').replace(',', '.'));
 
 /** Formulär för manuell faktura (engångsfaktura). Sparas som utkast. */
 export function InvoiceForm({ initial, onSaved, onCancel }: { initial: InvoiceFormInitial; onSaved: (id: string) => void; onCancel?: () => void }) {
+  const { me } = useSession();
+  const { articles } = useArticles();
   const [customers, setCustomers] = useState<{ id: string; name: string; customerNr: number; deliveryMethod: string }[]>([]);
   const [contracts, setContracts] = useState<{ id: string; contractNr: number; type: string; objects: string; status: string }[]>([]);
   const [objects, setObjects] = useState<{ objectId: string; objectNr: string; propertyName: string }[]>([]);
@@ -207,8 +211,16 @@ export function InvoiceForm({ initial, onSaved, onCancel }: { initial: InvoiceFo
               {lines.map((l, i) => (
                 <tr key={i}>
                   <td className="px-2 py-1.5">
-                    <Select value={l.article} onChange={(e) => setLine(i, { article: e.target.value })}>
-                      {Object.entries(INVOICE_ARTICLE_LABEL).map(([k, v]) => (
+                    <Select
+                      value={l.article}
+                      onChange={(e) =>
+                        setLine(i, {
+                          ...(articleDefaults(articles, me.activeCompanyId, e.target.value, { ...l }) as Partial<DraftLine>),
+                          article: e.target.value,
+                        })
+                      }
+                    >
+                      {Object.entries(articleOptions(articles, me.activeCompanyId, l.article)).map(([k, v]) => (
                         <option key={k} value={k}>
                           {v}
                         </option>

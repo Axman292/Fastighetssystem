@@ -1,19 +1,8 @@
 import { z } from 'zod';
 import { isoDate, kronorToOre } from '../common/money';
+import { articleCode } from '../articles/articles.controller';
 
 export const CONTRACT_TYPES = ['residential', 'commercial', 'parking', 'storage', 'other'] as const;
-export const ARTICLES = [
-  'rent',
-  'heating',
-  'electricity',
-  'water',
-  'parking',
-  'storage',
-  'service',
-  'index',
-  'discount',
-  'other',
-] as const;
 export const VAT_RATES = [0, 600, 1200, 2500] as const;
 
 const nullableText = (max = 2000) =>
@@ -37,7 +26,7 @@ export const signedKronor = z
 
 export const lineSchema = z.object({
   objectId: z.string().uuid().nullable().optional(),
-  article: z.enum(ARTICLES),
+  article: articleCode,
   description: z.string().trim().min(1, 'Ange en beskrivning').max(200),
   amount: signedKronor,
   vatRateBp: z.coerce
