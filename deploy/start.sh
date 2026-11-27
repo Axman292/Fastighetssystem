@@ -15,7 +15,8 @@ export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=192}"
 node apps/api/dist/scripts/migrate.js
 node apps/api/dist/scripts/seed.js
 if [ "${DEMO_DATA:-false}" = "true" ]; then
-  node apps/api/dist/scripts/seed-demo.js
+  # Demodata är bara en hjälp: misslyckas den ska tjänsten ändå starta.
+  node apps/api/dist/scripts/seed-demo.js || echo "Demodata kunde inte läggas upp, tjänsten startar ändå."
 fi
 
 node apps/api/dist/main.js &
