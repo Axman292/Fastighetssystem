@@ -57,7 +57,7 @@ export function monthFromHeader(h: string): string | null {
   return d ? `${d[1]}-${d[2]}-01` : null;
 }
 
-/** "Bankgatan 18 B LGH 11, 223 52 Lund" → gata, postnummer, ort */
+/** "Testgatan 1 A LGH 11, 223 52 Lund" → gata, postnummer, ort */
 export function splitAddress(s: string | null): { street: string | null; postalCode: string | null; city: string | null } {
   if (!s) return { street: null, postalCode: null, city: null };
   const m = String(s).match(/^(.*?),\s*(\d{3})\s?(\d{2})\s+(.+)$/);
@@ -315,7 +315,7 @@ export const dinHyresvardAdapter: SourceAdapter = {
 
   derive(profile, f, raw, headers) {
     if (!profile.startsWith('dhv_')) return;
-    // Adressen innehåller postnummer och ort: "Bankgatan 18 B LGH 11, 223 52 Lund"
+    // Adressen innehåller postnummer och ort: "Testgatan 1 A LGH 11, 223 52 Lund"
     if (typeof f['object.addressLine'] === 'string') {
       const a = splitAddress(f['object.addressLine']);
       f['object.addressLine'] = a.street;
