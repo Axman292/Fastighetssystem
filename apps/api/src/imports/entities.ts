@@ -145,6 +145,9 @@ export const ENTITIES: EntityDef[] = [
       { key: 'terminationDate', label: 'Uppsagt datum', type: 'date' },
       { key: 'signedDate', label: 'Undertecknat', type: 'date' },
       { key: 'billingInterval', label: 'Avisering', type: 'text', help: 'Månad eller Kvartal' },
+      { key: 'addonDescription', label: 'Tillägg', type: 'text', help: 'T.ex. Bredband. Blir en extra rad på avtalet, utöver hyran.' },
+      { key: 'addonAmount', label: 'Tillägg per månad (kr)', type: 'money' },
+      { key: 'addonVatLiable', label: 'Tillägget är momspliktigt', type: 'bool' },
     ],
   },
   {

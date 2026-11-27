@@ -249,6 +249,20 @@ export function buildRecords(batch: BatchInfo, tables: TableRow[], files: { id: 
             ? [objRec.key]
             : [];
         d._rentByObject = objRec && typeof d.monthlyRent === 'number' ? { [objRec.key]: d.monthlyRent } : {};
+        // Tillägg (t.ex. bredband) blir en egen rad på avtalet. En rad i filen kan ha ett tillägg.
+        d._addons = [];
+        if (txt(d.addonDescription) || typeof d.addonAmount === 'number') {
+          d._addons.push({
+            objectKey: objRec?.key ?? null,
+            description: txt(d.addonDescription) ?? 'Tillägg',
+            amountOre: typeof d.addonAmount === 'number' ? d.addonAmount : null,
+            vatLiable: d.addonVatLiable === true,
+            sourceRow: rowNr,
+          });
+        }
+        delete d.addonDescription;
+        delete d.addonAmount;
+        delete d.addonVatLiable;
         const ck = custRec?.key ?? norm(txt(d.customerRef) ?? '');
         const key = txt(d.externalId) ?? txt(d.groupKey) ?? `${ck}|${d.startDate}|${d._objectKeys.join('+')}`;
         mk('contract', key, `Avtal ${custRec?.label ?? txt(d.customerRef) ?? ''} från ${d.startDate ?? '?'}`.trim(), groups.contract);
@@ -325,6 +339,7 @@ function merge(a: Rec, b: Rec) {
   if (a.entity === 'contract') {
     for (const k of b.data._objectKeys ?? []) if (!a.data._objectKeys.includes(k)) a.data._objectKeys.push(k);
     Object.assign(a.data._rentByObject, b.data._rentByObject);
+    a.data._addons = [...(a.data._addons ?? []), ...(b.data._addons ?? [])];
     if (typeof b.data.monthlyRent === 'number') a.data.monthlyRent = (a.data.monthlyRent ?? 0) + b.data.monthlyRent;
     for (const [k, v] of Object.entries(b.data)) if (a.data[k] == null && v != null) a.data[k] = v;
     return;
@@ -773,6 +788,29 @@ export async function validateBatch(client: PoolClient, batch: BatchInfo, decisi
       );
     }
     if (d._lines.every((l: any) => l.amountOre === 0) && objects.length) warn(r, 'Avtalet saknar hyra');
+
+    // Tillägg utöver hyran, t.ex. bredband eller vidarefakturerad fastighetsskatt
+    for (const a of (d._addons ?? []) as { objectKey: string | null; description: string; amountOre: number | null; vatLiable: boolean; sourceRow: number }[]) {
+      if (a.amountOre === null) {
+        err(r, `Tillägget "${a.description}" saknar belopp (rad ${a.sourceRow})`);
+        continue;
+      }
+      if (a.vatLiable && d.type === 'residential') {
+        err(r, `Tillägget "${a.description}" kan inte vara momspliktigt på ett bostadsavtal (rad ${a.sourceRow})`);
+        continue;
+      }
+      const o = a.objectKey ? objects.find((x) => x.key === a.objectKey) : null;
+      d._lines.push({
+        objectKey: o?.key ?? null,
+        objectId: o?.id ?? null,
+        objectNr: o?.nr ?? null,
+        amountOre: a.amountOre,
+        vatRateBp: a.vatLiable ? 2500 : 0,
+        article: addonArticle(a.description),
+        description: a.description,
+        addon: true,
+      });
+    }
     if (d.status === 'terminated' && d.endDate && d.endDate < todayIso) info(r, `Avslutat ${d.endDate}`);
 
     // Redan importerat?
@@ -1076,4 +1114,16 @@ export function summarize(recs: Rec[]) {
     if (r.issues.some((i) => i.level === 'warning')) e.warnings++;
   }
   return out;
+}
+
+/** Artikel för ett tillägg på avtalet, efter texten. */
+export function addonArticle(description: string): string {
+  const t = norm(description);
+  if (/bredband|kabel|tv|internet|fiber/.test(t)) return 'service';
+  if (/^el\b|elektricitet|hushallsel/.test(t)) return 'electricity';
+  if (/varme|uppvarmning/.test(t)) return 'heating';
+  if (/vatten/.test(t)) return 'water';
+  if (/parkering|p plats|garage/.test(t)) return 'parking';
+  if (/forrad/.test(t)) return 'storage';
+  return 'other';
 }

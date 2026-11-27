@@ -308,14 +308,17 @@ export async function applyBatch(
           notes: note,
         });
         for (const l of d._lines ?? []) {
-          const objectId = need('object', l.objectKey, l.objectId);
-          await t.insert('contract_object', { company_id: c, contract_id: contractId, object_id: objectId, valid_from: d.startDate, valid_to: d.endDate ?? null });
+          const objectId = l.objectKey || l.objectId ? need('object', l.objectKey, l.objectId) : null;
+          // Tillägg (bredband m.m.) är egna rader på avtalet men inga egna objekt
+          if (!l.addon) {
+            await t.insert('contract_object', { company_id: c, contract_id: contractId, object_id: objectId, valid_from: d.startDate, valid_to: d.endDate ?? null });
+          }
           await t.insert('contract_line', {
             company_id: c,
             contract_id: contractId,
             object_id: objectId,
-            article: 'rent',
-            description: `Hyra ${l.objectNr}`,
+            article: l.addon ? l.article : 'rent',
+            description: l.addon ? l.description : `Hyra ${l.objectNr}`,
             amount_ore: l.amountOre,
             vat_rate_bp: l.vatRateBp,
             valid_from: d.startDate,
