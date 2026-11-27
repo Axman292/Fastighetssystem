@@ -34,12 +34,15 @@ Varje gång något slås ihop till `main` byggs testmiljön om automatiskt.
 ## Vad som händer vid start
 
 `deploy/start.sh` kör databasmigreringarna, lägger upp koncernen och användaren `admin@example.se`
-om de saknas och, eftersom `DEMO_DATA=true`, demodata om det inte finns några fastigheter.
-Demodatan (`apps/api/src/scripts/seed-demo.ts`) läggs in genom API:et: fyra fastigheter i tre bolag,
+om de saknas. Mer läggs inte in: testmiljön börjar tom (`DEMO_DATA=false`).
+
+Med `DEMO_DATA=true` fylls en databas utan fastigheter med demodata vid start. Demodatan (`apps/api/src/scripts/seed-demo.ts`) läggs in genom API:et: fyra fastigheter i tre bolag,
 hyresgäster, avtal (två vakanta objekt), avier för fyra månader och betalningar där några hyresgäster
 ligger efter, så att påminnelser och kundreskontra har något att visa.
 
 ## Börja om från början
 
-Töm databasen i Neon (till exempel genom att skapa en ny gren eller ett nytt projekt och byta
-`DATABASE_URL` i Render under *Environment*) och starta om tjänsten. Demodatan läggs då upp igen.
+Radera projektet i Neon (*Settings → Delete project*) och skapa ett nytt i Frankfurt. Då försvinner
+även Neons historik och grenar, så att inget av det gamla innehållet finns kvar. Byt sedan
+`DATABASE_URL` i Render under *Environment* till den nya adressen och spara. Vid nästa start läggs
+bara koncernen, de tre bolagen och `admin@example.se` upp igen (med lösenordet i `SEED_ADMIN_PASSWORD`).

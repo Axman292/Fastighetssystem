@@ -17,8 +17,9 @@ services:
         value: "22"
       - key: COOKIE_SECURE
         value: "true"
+      # "true" fyller en tom databas med påhittade demodata vid start. Avstängt: testmiljön börjar tom.
       - key: DEMO_DATA
-        value: "true"
+        value: "false"
       # Fylls i när tjänsten skapas: anslutningsadressen från Neon.
       - key: DATABASE_URL
         sync: false
