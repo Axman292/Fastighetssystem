@@ -27,6 +27,8 @@ export interface NewLine {
   propertyId?: string | null;
   costCenterId?: string | null;
   article: string;
+  /** Intäktskonto. Tomt = artikelns konto när raden skapas. */
+  accountNumber?: string | null;
   description: string;
   periodFrom?: string | null;
   periodTo?: string | null;
@@ -79,8 +81,8 @@ export async function insertLines(client: PoolClient, companyId: string, invoice
     await client.query(
       `insert into invoice_line (company_id, invoice_id, position, line_kind, contract_id, contract_line_id, contract_charge_id,
          object_id, property_id, cost_center_id, article, description, period_from, period_to, quantity, unit_price_ore,
-         net_ore, vat_rate_bp, vat_ore, credits_line_id, rebill)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
+         net_ore, vat_rate_bp, vat_ore, credits_line_id, rebill, account_number)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
       [
         companyId,
         invoiceId,
@@ -103,6 +105,7 @@ export async function insertLines(client: PoolClient, companyId: string, invoice
         l.vatOre,
         l.creditsLineId ?? null,
         l.rebill ?? false,
+        l.accountNumber ?? null,
       ],
     );
   }
@@ -257,6 +260,8 @@ export interface InvoiceLineRow {
   costCenterId: string | null;
   costCenterCode: string | null;
   article: string;
+  articleName: string | null;
+  accountNumber: string | null;
   description: string;
   periodFrom: string | null;
   periodTo: string | null;
@@ -298,7 +303,8 @@ export async function loadInvoice(client: PoolClient, id: string) {
       `select l.id, l.position, l.line_kind as "lineKind", l.contract_id as "contractId", l.contract_line_id as "contractLineId",
               l.object_id as "objectId", o.object_nr as "objectNr", l.property_id as "propertyId", p.name as "propertyName",
               l.cost_center_id as "costCenterId", cc.code as "costCenterCode",
-              l.article, l.description, l.period_from::text as "periodFrom", l.period_to::text as "periodTo",
+              l.article, ar.name as "articleName", l.account_number as "accountNumber",
+              l.description, l.period_from::text as "periodFrom", l.period_to::text as "periodTo",
               l.quantity::float as quantity, l.unit_price_ore::float as "unitPriceOre", l.net_ore::float as "netOre",
               l.vat_rate_bp as "vatRateBp", l.vat_ore::float as "vatOre", l.credits_line_id as "creditsLineId", l.rebill,
               coalesce((select -sum(x.net_ore) from invoice_line x join invoice xi on xi.id = x.invoice_id
@@ -307,6 +313,7 @@ export async function loadInvoice(client: PoolClient, id: string) {
        left join rental_object o on o.id = l.object_id
        left join property p on p.id = l.property_id
        left join cost_center cc on cc.id = l.cost_center_id
+       left join article ar on ar.company_id = l.company_id and ar.code = l.article
        where l.invoice_id = $1 order by l.position, l.created_at`,
       [id],
     )

@@ -27,8 +27,7 @@ import { billToFor, INVOICE_LIST_SQL, insertLines, issueInvoices, loadInvoice, N
 import { renderInvoicePdf } from './invoice-pdf';
 import { peppolXml } from './peppol';
 import { sendQueued } from './delivery';
-
-export const ARTICLES = ['rent', 'heating', 'electricity', 'water', 'parking', 'storage', 'service', 'index', 'discount', 'fee', 'other'] as const;
+import { articleCode } from '../articles/articles.controller';
 
 const signedKronor = z
   .number({ invalid_type_error: 'Ange ett belopp' })
@@ -37,7 +36,7 @@ const signedKronor = z
   .transform(kronorToOre);
 
 const manualLine = z.object({
-  article: z.enum(ARTICLES).default('other'),
+  article: articleCode.default('other'),
   description: z.string().trim().min(1, 'Ange en text').max(300),
   quantity: z.number().finite().positive('Antal måste vara större än noll').max(1e6).default(1),
   unitPrice: signedKronor,
@@ -317,6 +316,7 @@ export class InvoicesController {
           propertyId: l.propertyId,
           costCenterId: l.costCenterId,
           article: l.article,
+          accountNumber: l.accountNumber,
           description: `Kredit: ${l.description}`,
           periodFrom: l.periodFrom,
           periodTo: l.periodTo,

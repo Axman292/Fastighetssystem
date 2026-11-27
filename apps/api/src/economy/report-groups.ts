@@ -58,5 +58,11 @@ export function reportGroupOf(accountNumber: string, override?: string | null): 
   return override && (REPORT_GROUPS as readonly string[]).includes(override) ? (override as ReportGroup) : defaultReportGroup(accountNumber);
 }
 
-/** Artiklar på kundfakturor som räknas som hyra. Övriga (värme, el, avgifter ...) blir övriga intäkter. */
-export const RENT_ARTICLES = ['rent', 'index', 'discount', 'parking', 'storage'];
+/**
+ * Rapportgrupp för en kundfakturarad. Kontot kommer från fakturaraden eller
+ * artikeln. Hyresintäktskonton (3910–3919) blir hyra, allt annat övriga intäkter.
+ */
+export function incomeGroupOf(accountNumber: string | null, override?: string | null): 'rent_income' | 'other_income' {
+  if (!accountNumber) return 'other_income';
+  return reportGroupOf(accountNumber, override) === 'rent_income' ? 'rent_income' : 'other_income';
+}

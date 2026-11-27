@@ -58,11 +58,11 @@ describe('importcentral, tillägg och medhyresgäster', () => {
     expect(block.objects).not.toContain('T3');
     const full = (await agent.get(`/contracts/${block.id}`).expect(200)).body;
     const lines = full.lines.map((l: any) => [l.article, l.description, Number(l.amountOre)]);
-    expect(lines).toEqual(expect.arrayContaining([['service', 'Bredband', 27500], ['service', 'Bredband', 27500]]));
+    expect(lines).toEqual(expect.arrayContaining([['broadband', 'Bredband', 27500], ['broadband', 'Bredband', 27500]]));
 
     const lok = list.find((k: any) => k.objects.includes('T4'));
     const lokFull = (await agent.get(`/contracts/${lok.id}`).expect(200)).body;
-    expect(lokFull.lines.find((l: any) => l.description === 'Fastighetsskatt')).toMatchObject({ vatRateBp: 2500 });
+    expect(lokFull.lines.find((l: any) => l.description === 'Fastighetsskatt')).toMatchObject({ vatRateBp: 2500, article: 'property_tax' });
     expect(Number(lokFull.lines.find((l: any) => l.description === 'Fastighetsskatt').amountOre)).toBe(400000);
 
     const customers = (await agent.get('/customers').expect(200)).body;

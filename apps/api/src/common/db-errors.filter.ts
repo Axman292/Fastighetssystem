@@ -33,6 +33,10 @@ export class DbErrorsFilter implements ExceptionFilter {
       return;
     }
     if (code === '23503') {
+      if ((err as { constraint?: string }).constraint?.endsWith('_article_fk')) {
+        res.status(400).json({ message: 'Artikeln finns inte i bolagets artikelregister' });
+        return;
+      }
       res.status(400).json({ message: 'Uppgiften hänvisar till något som inte finns i valt bolag' });
       return;
     }

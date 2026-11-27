@@ -97,8 +97,6 @@ interface BilledRow {
   invPeriodTo: string | null;
 }
 
-const ARTICLE_ORDER = ['rent', 'parking', 'storage', 'heating', 'electricity', 'water', 'service', 'index', 'discount', 'fee', 'other'];
-
 /**
  * Bygger om underlaget för en körning: alla utkast och kontroller tas bort och
  * skapas på nytt ur avtalen. Utfärdade fakturor påverkas aldrig.
@@ -146,6 +144,11 @@ export async function generateRun(client: PoolClient, run: RunRow): Promise<{ in
     )
   ).rows;
   const ids = contracts.map((k) => k.id);
+  // Raderna på avin sorteras i artikelregistrets ordning
+  const articleOrder = new Map<string, number>(
+    (await client.query(`select code, position from article where company_id = $1`, [run.companyId])).rows.map((r) => [r.code, r.position]),
+  );
+  const orderOf = (code: string) => articleOrder.get(code) ?? 9999;
 
   const lines: LineRow[] = (
     await client.query(
@@ -429,7 +432,7 @@ export async function generateRun(client: PoolClient, run: RunRow): Promise<{ in
       const oa = objOf(a.objectId ?? null)?.objectNr ?? '';
       const ob = objOf(b.objectId ?? null)?.objectNr ?? '';
       if (oa !== ob) return oa.localeCompare(ob, 'sv');
-      return ARTICLE_ORDER.indexOf(a.article) - ARTICLE_ORDER.indexOf(b.article);
+      return orderOf(a.article) - orderOf(b.article);
     });
 
     const net = out.reduce((s, l) => s + l.netOre, 0);

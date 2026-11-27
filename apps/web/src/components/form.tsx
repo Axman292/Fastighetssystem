@@ -14,6 +14,8 @@ export type FieldDef = {
   placeholder?: string;
   /** Halv bredd i tvåkolumnslayout */
   half?: boolean;
+  /** Fyller i andra fält när ett val görs, t.ex. moms och text för en artikel */
+  onSelect?: (value: string, values: Record<string, string | boolean>) => Record<string, string | boolean> | undefined;
 };
 
 type Values = Record<string, string | boolean>;
@@ -85,7 +87,10 @@ export function FormFields({
           ) : (
             <Field label={f.label + (f.required ? '' : '')} error={fe(f.key)} hint={f.hint}>
               {f.type === 'select' ? (
-                <Select value={String(values[f.key] ?? '')} onChange={(e) => onChange({ ...values, [f.key]: e.target.value })}>
+                <Select
+                  value={String(values[f.key] ?? '')}
+                  onChange={(e) => onChange({ ...values, ...f.onSelect?.(e.target.value, values), [f.key]: e.target.value })}
+                >
                   {!f.required && <option value="">–</option>}
                   {Object.entries(f.options ?? {}).map(([k, v]) => (
                     <option key={k} value={k}>

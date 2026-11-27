@@ -10,7 +10,6 @@ import { Badge, Button, Card, ErrorNote, PageHeader, Stat, Table, Td, cx } from 
 import { api, ApiError } from '@/lib/api';
 import { contractTermsFields, depositFields, lineFields } from '@/lib/fields';
 import {
-  ARTICLE_LABEL,
   CONTRACT_TYPE_LABEL,
   DEPOSIT_LABEL,
   MONTH_LABEL,
@@ -21,6 +20,7 @@ import {
   todayIso,
 } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { articleDefaults, articleName, articleOptions, useArticles } from '@/lib/articles';
 import { ContractBilling } from '@/components/contract-billing';
 
 interface Line {
@@ -121,6 +121,7 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
   const [formKey, setFormKey] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [freeObjects, setFreeObjects] = useState<ObjectRow[]>([]);
+  const { articles } = useArticles();
 
   const load = useCallback(() => {
     api<ContractDetail>(`/contracts/${id}`)
@@ -331,7 +332,7 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
                   )}
                   {l.reason && <div className="text-[12px] text-ink-3">{l.reason}</div>}
                 </Td>
-                <Td className="text-ink-2">{ARTICLE_LABEL[l.article]}</Td>
+                <Td className="text-ink-2">{articleName(articles, k.companyId, l.article)}</Td>
                 <Td className="tabular">{fmtOre(l.amountOre, true)}</Td>
                 <Td className="tabular text-ink-2">{l.vatRateBp ? `${l.vatRateBp / 100} %` : '–'}</Td>
                 <Td className="tabular text-[12px] text-ink-2">
@@ -532,6 +533,9 @@ function Dialogs({
   afterCancel: () => void;
 }) {
   const opts = { companyId: k.companyId };
+  const { articles } = useArticles();
+  const pick = (code: string, values: Record<string, string | boolean>) =>
+    articleDefaults(articles, k.companyId, code, values, { residential: k.type === 'residential' });
   const kind = dialog?.kind;
   const line = dialog && 'line' in dialog ? dialog.line : null;
   const deposit = dialog && 'deposit' in dialog ? dialog.deposit : null;
@@ -635,8 +639,8 @@ function Dialogs({
       <FormDialog
         open={kind === 'addLine'}
         title="Ny hyresrad"
-        fields={lineFields}
-        initial={{ article: 'rent', vatRateBp: k.type === 'residential' ? '0' : '2500', validFrom: k.status === 'draft' ? null : todayIso() }}
+        fields={lineFields(articleOptions(articles, k.companyId), pick)}
+        initial={{ article: 'rent', description: articleName(articles, k.companyId, 'rent'), vatRateBp: k.type === 'residential' ? '0' : '2500', validFrom: k.status === 'draft' ? null : todayIso() }}
         onClose={onClose}
         submit={async (body) => {
           await post('/lines', body);
@@ -646,7 +650,7 @@ function Dialogs({
       <FormDialog
         open={kind === 'editLine'}
         title="Ändra hyresrad"
-        fields={lineFields}
+        fields={lineFields(articleOptions(articles, k.companyId, line?.article), pick)}
         initial={line ? { ...line, amount: line.amountOre } : null}
         onClose={onClose}
         submit={async (body) => {

@@ -28,6 +28,7 @@ import { ChargesController } from './billing/charges.controller';
 import { AccountsController, SuppliersController } from './suppliers/suppliers.controller';
 import { SupplierInvoicesController } from './suppliers/supplier-invoices.controller';
 import { EconomyController } from './economy/economy.controller';
+import { ArticlesController } from './articles/articles.controller';
 
 @Module({
   controllers: [
@@ -56,6 +57,7 @@ import { EconomyController } from './economy/economy.controller';
     SuppliersController,
     SupplierInvoicesController,
     EconomyController,
+    ArticlesController,
   ],
   providers: [
     AuthService,

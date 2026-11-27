@@ -5,10 +5,10 @@ import { parse } from '../common/validation';
 import { withContext } from '../db/db';
 import { Ctx, dbContext, RequestContext, requireCompany } from '../auth/request-context';
 import { monthStart } from './billing-rules';
-import { ARTICLES } from './invoices.controller';
+import { articleCode } from '../articles/articles.controller';
 
 const chargeSchema = z.object({
-  article: z.enum(ARTICLES).default('other'),
+  article: articleCode.default('other'),
   description: z.string().trim().min(1, 'Ange en text').max(300),
   amount: z
     .number({ invalid_type_error: 'Ange ett belopp' })
