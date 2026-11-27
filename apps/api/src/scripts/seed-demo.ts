@@ -70,20 +70,26 @@ export async function seedDemo(email: string, password: string, log = console.lo
   try {
     await s.post('/auth/login', { email, password });
     const me = await s.get<{ companies: { companyId: string; companyName: string }[] }>('/auth/me');
-    const company = (name: string) => {
-      const c = me.companies.find((x) => x.companyName === name);
-      if (!c) throw new Error(`Bolaget ${name} saknas`);
+    // Finns det redan fastigheter i något bolag görs ingenting. Kontrollen görs först,
+    // så att bolag som bytt namn efter första starten inte stoppar uppstarten.
+    for (const c of me.companies) {
+      await s.post('/auth/switch-company', { companyId: c.companyId });
+      if ((await s.get<unknown[]>('/properties')).length) {
+        log('Demodata finns redan, inget lades till.');
+        return;
+      }
+    }
+
+    // Bolagen hittas på namn, med de namn de kan ha bytts till.
+    const company = (...names: string[]) => {
+      const c = me.companies.find((x) => names.includes(x.companyName));
+      if (!c) throw new Error(`Bolaget ${names[0]} saknas`);
       return c.companyId;
     };
     const pdf = company('P Dahlqvist Förvaltning AB');
-    const hpk = company('HPK AB');
+    const hpk = company('HPK AB', 'Fastighets Hemporten K AB', 'Fastighet AB Hemporten K');
     const hbb = company('Hardebergabanan AB');
-
     await s.post('/auth/switch-company', { companyId: pdf });
-    if ((await s.get<unknown[]>('/properties')).length) {
-      log('Demodata finns redan, inget lades till.');
-      return;
-    }
 
     const start = `${monthOffset(-2)}-01`;
     const companyData: [string, Json][] = [
