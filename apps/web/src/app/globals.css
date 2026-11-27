@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* dark:-klasser följer temat som användaren valt, inte bara systemet. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Designsystem: lugna gråskalor, en accentfärg, tät men luftig typografi.
  * Inspiration: Linear och Stripe. Alla färger som tokens så att mörkt läge
@@ -26,11 +29,48 @@
   --color-warn-soft: #fff7ed;
   --color-bad: #b91c1c;
   --color-bad-soft: #fef2f2;
+  --color-on-accent: #ffffff;
+  --color-backdrop: rgb(16 16 20 / 0.2);
 
   --radius-md: 6px;
   --radius-lg: 10px;
   --shadow-card: 0 1px 2px rgb(16 16 20 / 0.04), 0 0 0 1px rgb(16 16 20 / 0.06);
   --shadow-pop: 0 8px 24px rgb(16 16 20 / 0.12), 0 0 0 1px rgb(16 16 20 / 0.08);
+}
+
+/*
+ * Mörkt läge: samma tokens med mörka värden. Klassen .dark sätts på <html>
+ * av skriptet i layout.tsx innan sidan ritas, så att den inte blinkar vit.
+ * Bara på skärm: utskrifter av avier och fakturor är alltid ljusa.
+ */
+@media screen {
+  html.dark {
+    color-scheme: dark;
+    --color-canvas: #0e0e10;
+    --color-surface: #18181b;
+    --color-subtle: #222226;
+    --color-line: #2a2a2f;
+    --color-line-strong: #3b3b42;
+    --color-ink: #ededf0;
+    --color-ink-2: #a9a9b3;
+    --color-ink-3: #75757f;
+    --color-accent: #6d6cf2;
+    --color-accent-hover: #8584f6;
+    --color-accent-soft: #24234a;
+    --color-good: #4ade80;
+    --color-good-soft: #0f2a1a;
+    --color-warn: #fbbf24;
+    --color-warn-soft: #2d2110;
+    --color-bad: #f87171;
+    --color-bad-soft: #321718;
+    --color-backdrop: rgb(0 0 0 / 0.6);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.07);
+    --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.1);
+  }
+}
+
+html {
+  color-scheme: light;
 }
 
 html,

@@ -536,7 +536,7 @@ function CheckStep({
               <button
                 key={s || 'all'}
                 onClick={() => setStatus(s)}
-                className={cx('h-7 rounded-md px-2.5 text-[12.5px]', status === s ? 'bg-ink text-white' : 'bg-surface text-ink-2 shadow-card hover:bg-subtle')}
+                className={cx('h-7 rounded-md px-2.5 text-[12.5px]', status === s ? 'bg-ink text-canvas' : 'bg-surface text-ink-2 shadow-card hover:bg-subtle')}
               >
                 {s ? ROW_STATUS[s].label : 'Alla'} <span className="opacity-60">{n}</span>
               </button>

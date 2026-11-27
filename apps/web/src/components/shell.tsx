@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
 import { useSession } from '@/lib/session';
+import { ThemeToggle } from './theme';
 import { cx } from './ui';
 
 const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = [
@@ -50,7 +51,8 @@ export function Shell({ children }: { children: ReactNode }) {
             <NavItem key={n.label} {...n} active={pathname.startsWith(n.href)} />
           ))}
         </nav>
-        <div className="mt-auto flex items-center gap-2 rounded-md px-2 py-2">
+        <ThemeToggle className="mx-2 mt-auto" />
+        <div className="mt-2 flex items-center gap-2 rounded-md px-2 py-2">
           <div className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">
             {initials(me.user.name)}
           </div>
@@ -123,7 +125,7 @@ function CompanySwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <div className="flex size-6 shrink-0 items-center justify-center rounded bg-accent text-[11px] font-semibold text-white">
+        <div className="flex size-6 shrink-0 items-center justify-center rounded bg-accent text-[11px] font-semibold text-on-accent">
           {active ? initials(active.companyName) : 'K'}
         </div>
         <div className="min-w-0 flex-1">
