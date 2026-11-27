@@ -3,7 +3,10 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
+  ForbiddenException,
   Get,
+  HttpCode,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -18,7 +21,7 @@ import { dayBefore, today } from '../common/money';
 import { parse } from '../common/validation';
 import { Db, withContext } from '../db/db';
 import { rentalObject, rentalObjectPrice, rentalObjectVat } from '../db/schema';
-import { Ctx, dbContext, RequestContext, requireCompany } from '../auth/request-context';
+import { Ctx, dbContext, RequestContext, requireCompany, requirePermission } from '../auth/request-context';
 import { newObjectSchema, objectSchema, priceSchema, RESIDENTIAL_TYPES, vatSchema } from './property.schemas';
 
 const LIST_SQL = `
@@ -42,8 +45,93 @@ const LIST_SQL = `
          or p.name ilike '%' || $3 || '%')
   order by p.name, o.object_nr`;
 
+/**
+ * Skäl till att ett objekt inte får tas bort. Avtal, fakturor, kostnader och
+ * dokument ska finnas kvar i historiken, så då markeras objektet som inaktivt i stället.
+ */
+const BLOCKERS_SQL = `
+  select o.id,
+    array_remove(array[
+      case when exists (select 1 from contract_object x where x.object_id = o.id)
+             or exists (select 1 from contract_line x where x.object_id = o.id)
+             or exists (select 1 from contract_charge x where x.object_id = o.id)
+           then 'Ingår i ett hyresavtal' end,
+      case when exists (select 1 from invoice_line x where x.object_id = o.id) then 'Finns på fakturor' end,
+      case when exists (select 1 from supplier_invoice_line x where x.object_id = o.id) then 'Har kostnader från leverantörsfakturor' end,
+      case when exists (select 1 from document x where x.entity_type = 'rental_object' and x.entity_id = o.id) then 'Har dokument' end
+    ], null) as reasons
+  from rental_object o
+  where o.id = any($1::uuid[])`;
+
+async function blockers(client: PoolClient, ids: string[]): Promise<Map<string, string[]>> {
+  const { rows } = await client.query<{ id: string; reasons: string[] }>(BLOCKERS_SQL, [ids]);
+  return new Map(rows.map((r) => [r.id, r.reasons]));
+}
+
+export interface DeleteSummary {
+  deleted: { id: string; objectNr: string; propertyName: string }[];
+  skipped: {
+    id: string;
+    objectNr: string;
+    propertyName: string;
+    reasons: string[];
+  }[];
+}
+
 @Controller('objects')
 export class ObjectsController {
+  /**
+   * Tar bort alla inaktiva objekt som saknar historik, i valt bolag eller i alla bolag
+   * användaren får ändra i (koncernvyn). Objekt med avtal, fakturor m.m. hoppas över
+   * och redovisas med skäl. Med dryRun visas bara vad som skulle hända.
+   */
+  @Post('delete-inactive')
+  @HttpCode(200)
+  async deleteInactive(@Ctx() ctx: RequestContext, @Body() body: unknown): Promise<DeleteSummary> {
+    const { propertyId, dryRun } = parse(
+      z.object({
+        propertyId: z.string().uuid().optional(),
+        dryRun: z.boolean().optional(),
+      }),
+      body ?? {},
+    );
+    let companyIds: string[];
+    if (ctx.activeCompanyId) {
+      requirePermission(ctx, ctx.activeCompanyId, 'property.write');
+      companyIds = [ctx.activeCompanyId];
+    } else {
+      companyIds = ctx.access.filter((a) => a.permissions.includes('property.write')).map((a) => a.companyId);
+      if (!companyIds.length) throw new ForbiddenException('Du saknar behörighet för detta');
+    }
+    return withContext(dbContext(ctx, companyIds), async (_db, client) => {
+      const { rows } = await client.query<{
+        id: string;
+        objectNr: string;
+        propertyName: string;
+      }>(
+        `select o.id, o.object_nr as "objectNr", p.name as "propertyName"
+           from rental_object o join property p on p.id = o.property_id
+          where not o.active and ($1::uuid is null or o.property_id = $1)
+          order by p.name, o.object_nr`,
+        [propertyId ?? null],
+      );
+      const reasons = await blockers(
+        client,
+        rows.map((r) => r.id),
+      );
+      const summary: DeleteSummary = { deleted: [], skipped: [] };
+      for (const r of rows) {
+        const why = reasons.get(r.id) ?? [];
+        if (why.length) summary.skipped.push({ ...r, reasons: why });
+        else summary.deleted.push(r);
+      }
+      if (!dryRun && summary.deleted.length) {
+        await client.query('delete from rental_object where id = any($1::uuid[])', [summary.deleted.map((r) => r.id)]);
+      }
+      return summary;
+    });
+  }
+
   @Get()
   list(
     @Ctx() ctx: RequestContext,
@@ -114,6 +202,37 @@ export class ObjectsController {
       const [row] = await db.update(rentalObject).set(patch).where(eq(rentalObject.id, id)).returning();
       if (!row) throw new NotFoundException('Objektet finns inte i valt bolag');
       return row;
+    });
+  }
+
+  /** Skäl till att objektet inte kan tas bort. Tom lista betyder att det går. */
+  @Get(':id/delete-check')
+  async deleteCheck(@Ctx() ctx: RequestContext, @Param('id', ParseUUIDPipe) id: string) {
+    return withContext(
+      dbContext(
+        ctx,
+        ctx.access.map((a) => a.companyId),
+      ),
+      async (_db, client) => {
+        const reasons = (await blockers(client, [id])).get(id);
+        if (!reasons) throw new NotFoundException('Objektet finns inte');
+        return { reasons };
+      },
+    );
+  }
+
+  /** Tar bort ett objekt som saknar avtal, fakturor och annan historik som ska sparas. */
+  @Delete(':id')
+  @HttpCode(204)
+  async remove(@Ctx() ctx: RequestContext, @Param('id', ParseUUIDPipe) id: string) {
+    requireCompany(ctx, 'property.write');
+    await withContext(dbContext(ctx), async (_db, client) => {
+      const reasons = (await blockers(client, [id])).get(id);
+      if (!reasons) throw new NotFoundException('Objektet finns inte i valt bolag');
+      if (reasons.length) {
+        throw new ConflictException(`Objektet kan inte tas bort: ${reasons.join(', ').toLowerCase()}. Markera det som inaktivt i stället.`);
+      }
+      await client.query('delete from rental_object where id = $1', [id]);
     });
   }
 

@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useState } from 'react';
 import { FieldDef, FormDialog, FormFields, fromRow, toBody } from '@/components/form';
-import { Badge, Button, Card, ErrorNote, PageHeader, Stat, Table, Td } from '@/components/ui';
+import { Badge, Button, Card, Dialog, ErrorNote, PageHeader, Stat, Table, Td } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { objectFields } from '@/lib/fields';
 import { OBJECT_STATUS, OBJECT_TYPE_LABEL, RESIDENTIAL_TYPES, fmtInt, fmtM2, fmtNum, fmtOre } from '@/lib/format';
@@ -226,15 +227,18 @@ function ObjectForm({ object, editable, onSaved }: { object: ObjectDetail; edita
         />
         {editable && (
           <div className="mt-5 flex items-center justify-between gap-3">
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                await api(`/objects/${object.id}`, { method: 'PATCH', body: { active: !object.active }, companyId: object.companyId });
-                onSaved();
-              }}
-            >
-              {object.active ? 'Markera som inaktivt' : 'Aktivera'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  await api(`/objects/${object.id}`, { method: 'PATCH', body: { active: !object.active }, companyId: object.companyId });
+                  onSaved();
+                }}
+              >
+                {object.active ? 'Markera som inaktivt' : 'Aktivera'}
+              </Button>
+              <DeleteObject object={object} />
+            </div>
             <div className="flex items-center gap-3">
               {saved && <span className="text-[12px] text-good">Sparat</span>}
               {error && !error.fields.length && <ErrorNote message={error.message} />}
@@ -257,5 +261,78 @@ function ObjectForm({ object, editable, onSaved }: { object: ObjectDetail; edita
         )}
       </Card>
     </section>
+  );
+}
+
+/** Tar bort objektet efter bekräftelse. Går bara när det saknar avtal, fakturor och annan historik. */
+function DeleteObject({ object }: { object: ObjectDetail }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [reasons, setReasons] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function start() {
+    setOpen(true);
+    setReasons(null);
+    setError(null);
+    try {
+      setReasons((await api<{ reasons: string[] }>(`/objects/${object.id}/delete-check`)).reasons);
+    } catch (e) {
+      setError((e as ApiError).message);
+    }
+  }
+
+  return (
+    <>
+      <Button variant="danger" onClick={start}>
+        Ta bort
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title={`Ta bort ${object.objectNr}?`}>
+        <div className="space-y-4 text-[13px]">
+          <ErrorNote message={error} />
+          {!reasons && !error && <p className="text-ink-3">Kontrollerar objektet…</p>}
+          {reasons && reasons.length > 0 && (
+            <>
+              <p>Objektet kan inte tas bort eftersom historiken ska sparas:</p>
+              <ul className="list-disc pl-5 text-ink-2">
+                {reasons.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+              <p className="text-ink-3">Markera det som inaktivt i stället, så syns det inte som ledigt.</p>
+            </>
+          )}
+          {reasons && reasons.length === 0 && <p>Objektet och dess hyres- och momshistorik tas bort för gott. Det går inte att ångra.</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              {reasons?.length === 0 ? 'Avbryt' : 'Stäng'}
+            </Button>
+            {reasons?.length === 0 && (
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setError(null);
+                  try {
+                    await api(`/objects/${object.id}`, {
+                      method: 'DELETE',
+                      companyId: object.companyId,
+                    });
+                    router.push(`/fastigheter/${object.propertyId}`);
+                  } catch (e) {
+                    setError((e as ApiError).message);
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? 'Tar bort…' : 'Ta bort objektet'}
+              </Button>
+            )}
+          </div>
+        </div>
+      </Dialog>
+    </>
   );
 }
