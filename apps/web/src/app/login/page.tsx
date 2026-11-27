@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { Button, ErrorNote, Field, Input, Logo } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
+import { ThemeToggle } from '@/components/theme';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +25,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <main className="relative flex min-h-screen items-center justify-center p-4">
+      <ThemeToggle className="absolute right-4 top-4 w-24" />
       <div className="w-full max-w-[360px]">
         <div className="mb-8 flex items-center gap-2.5">
           <Logo />

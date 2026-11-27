@@ -18,7 +18,7 @@ export function Button({
       className={cx(
         'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50',
         size === 'sm' ? 'h-7 px-2.5 text-[13px]' : 'h-8 px-3 text-[13px]',
-        variant === 'primary' && 'bg-accent text-white hover:bg-accent-hover',
+        variant === 'primary' && 'bg-accent text-on-accent hover:bg-accent-hover',
         variant === 'secondary' && 'bg-surface text-ink shadow-card hover:bg-subtle',
         variant === 'ghost' && 'text-ink-2 hover:bg-subtle hover:text-ink',
         variant === 'danger' && 'bg-surface text-bad shadow-card hover:bg-bad-soft',
@@ -129,7 +129,7 @@ export function Dialog({ open, onClose, title, children, wide }: { open: boolean
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/20 p-4 pt-[8vh]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-backdrop p-4 pt-[8vh]" onMouseDown={onClose}>
       <div role="dialog" aria-label={title} className={cx('w-full rounded-lg bg-surface shadow-pop', wide ? 'max-w-2xl' : 'max-w-md')} onMouseDown={(e) => e.stopPropagation()}>
         <div className="border-b border-line px-5 py-3.5 text-[14px] font-semibold">{title}</div>
         <div className="p-5">{children}</div>
