@@ -111,6 +111,79 @@ describe('fastigheter', () => {
       expect((await agent.get('/properties').expect(200)).body).toHaveLength(0);
       await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
     });
+
+    it('tar bort ett objekt utan historik men aldrig ett som ingår i ett avtal', async () => {
+      const tmp = (
+        await agent
+          .post('/objects')
+          .send({
+            propertyId,
+            objectNr: 'F99',
+            type: 'storage',
+            monthlyRent: 100,
+          })
+          .expect(201)
+      ).body.id;
+      expect((await agent.get(`/objects/${tmp}/delete-check`).expect(200)).body.reasons).toEqual([]);
+      await agent.delete(`/objects/${tmp}`).expect(204);
+      await agent.get(`/objects/${tmp}`).expect(404);
+
+      const customer = (
+        await agent
+          .post('/customers')
+          .send({
+            kind: 'person',
+            name: 'Tolvan Tolvansson',
+            nationalId: '191212121212',
+            email: 'tolvan@example.se',
+            addressLine: 'Kvarngatan 4',
+            postalCode: '211 11',
+            city: 'Malmö',
+          })
+          .expect(201)
+      ).body.id;
+      await agent
+        .post('/contracts')
+        .send({
+          type: 'residential',
+          customerId: customer,
+          startDate: '2026-01-01',
+          objectIds: [lgh],
+        })
+        .expect(201);
+      expect((await agent.get(`/objects/${lgh}/delete-check`).expect(200)).body.reasons).toEqual(['Ingår i ett hyresavtal']);
+      const res = await agent.delete(`/objects/${lgh}`).expect(409);
+      expect(res.body.message).toContain('inaktivt');
+      await agent.get(`/objects/${lgh}`).expect(200);
+    });
+
+    it('tar bort alla inaktiva objekt och redovisar vilka som hoppades över', async () => {
+      const a = (await agent.post('/objects').send({ propertyId, objectNr: 'P01', type: 'parking' }).expect(201)).body.id;
+      const b = (await agent.post('/objects').send({ propertyId, objectNr: 'P02', type: 'parking' }).expect(201)).body.id;
+      await agent.patch(`/objects/${a}`).send({ active: false }).expect(200);
+      await agent.patch(`/objects/${lgh}`).send({ active: false }).expect(200);
+
+      const preview = (await agent.post('/objects/delete-inactive').send({ dryRun: true }).expect(200)).body;
+      expect(preview.deleted.map((o: { objectNr: string }) => o.objectNr)).toEqual(['P01']);
+      expect(preview.skipped).toMatchObject([{ objectNr: '1001', reasons: ['Ingår i ett hyresavtal'] }]);
+      await agent.get(`/objects/${a}`).expect(200);
+
+      const done = (await agent.post('/objects/delete-inactive').send({}).expect(200)).body;
+      expect(done.deleted).toHaveLength(1);
+      await agent.get(`/objects/${a}`).expect(404);
+      await agent.get(`/objects/${b}`).expect(200); // aktivt objekt rörs inte
+      await agent.get(`/objects/${lgh}`).expect(200);
+    });
+
+    it('ett annat bolag kan inte ta bort objektet', async () => {
+      const own = (await agent.post('/objects').send({ propertyId, objectNr: 'F98', type: 'storage' }).expect(201)).body.id;
+      await agent.patch(`/objects/${own}`).send({ active: false }).expect(200);
+      await agent.post('/auth/switch-company').send({ companyId: companyB }).expect(200);
+      await agent.delete(`/objects/${own}`).expect(404);
+      expect((await agent.post('/objects/delete-inactive').send({}).expect(200)).body.deleted).toEqual([]);
+      await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
+      await agent.get(`/objects/${own}`).expect(200);
+    });
   });
 });
 
