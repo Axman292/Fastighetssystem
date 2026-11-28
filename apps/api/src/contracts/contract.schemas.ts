@@ -102,6 +102,7 @@ export const depositSchema = z.object({
   dueDate: optDate,
   receivedDate: optDate,
   returnedDate: optDate,
+  validUntil: optDate,
   note: nullableText(1000),
 });
 

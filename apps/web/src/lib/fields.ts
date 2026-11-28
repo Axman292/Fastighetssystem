@@ -98,5 +98,6 @@ export const depositFields: FieldDef[] = [
   { key: 'dueDate', label: 'Ska lämnas senast', type: 'date', half: true },
   { key: 'receivedDate', label: 'Mottagen', type: 'date', half: true },
   { key: 'returnedDate', label: 'Återbetald', type: 'date', half: true },
+  { key: 'validUntil', label: 'Gäller till', type: 'date', half: true, hint: 'För bankgaranti och borgen' },
   { key: 'note', label: 'Anteckning' },
 ];

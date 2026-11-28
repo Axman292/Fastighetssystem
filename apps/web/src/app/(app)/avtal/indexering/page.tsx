@@ -47,6 +47,11 @@ export default function IndexPage() {
   const { me, active, can, version } = useSession();
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(new Date().getMonth() >= 9 ? thisYear + 1 : thisYear);
+  useEffect(() => {
+    // Från avtalsbevakningen: ?ar=2027
+    const fromLink = Number(new URLSearchParams(window.location.search).get('ar'));
+    if (fromLink >= 1990 && fromLink <= 2200) setYear(fromLink);
+  }, []);
   const [kpi, setKpi] = useState<Kpi[]>([]);
   const [rows, setRows] = useState<IndexRow[] | null>(null);
   const [adding, setAdding] = useState(false);

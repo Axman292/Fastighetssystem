@@ -37,6 +37,8 @@ import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
+import { ContractAlertsController } from './contracts/alerts.controller';
+import { ContractAlertScheduler } from './contracts/alert-digest';
 
 @Module({
   controllers: [
@@ -76,10 +78,12 @@ import { GdprScheduler } from './gdpr/gdpr-scheduler';
     PaymentPlansController,
     CollectionCasesController,
     GdprController,
+    ContractAlertsController,
   ],
   providers: [
     AuthService,
     GdprScheduler,
+    ContractAlertScheduler,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DbErrorsFilter },
   ],
