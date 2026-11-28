@@ -30,3 +30,13 @@ services:
       # Fylls i när tjänsten skapas: lösenordet för admin@example.se i testmiljön.
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      # E-post i testmiljön skickas bara till adresserna i EMAIL_ALLOWLIST. Andra mottagare blir testläge.
+      - key: EMAIL_ALLOWLIST_ONLY
+        value: "true"
+      # Läggs in under Environment i Render (se deploy/TESTMILJO.md). Klistra aldrig in nycklar i chatten.
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: EMAIL_ALLOWLIST
+        sync: false

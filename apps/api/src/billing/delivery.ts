@@ -9,17 +9,29 @@ import { peppolXml } from './peppol';
 const TITLE: Record<string, string> = { rent_notice: 'Hyresavi', invoice: 'Faktura', credit_note: 'Kreditfaktura' };
 
 /**
- * Utskick av fakturor.
+ * Utskick av fakturor, avier, påminnelser och kontoutdrag.
  *
- * E-post skickas via SMTP när SMTP_HOST är satt. Utan SMTP körs testläge: meddelandet
- * sparas som .eml-fil i OUTBOX_DIR och leveransen markeras "test", så att inget når kunden.
+ * E-post skickas på riktigt på ett av två sätt:
+ *  - Brevo (HTTP-API) när BREVO_API_KEY är satt. Fungerar även där vanliga SMTP-portar är
+ *    spärrade, till exempel på Renders gratisnivå.
+ *  - SMTP när SMTP_HOST är satt (SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS).
+ * Avsändaradressen tas från MAIL_FROM (eller SMTP_FROM). Bolagets fakturamejl blir svarsadress.
+ * Utan Brevo eller SMTP körs testläge: meddelandet sparas som .eml-fil i OUTBOX_DIR och
+ * leveransen markeras "test", så att inget når kunden.
+ *
+ * Spärr för testmiljöer: när EMAIL_ALLOWLIST_ONLY=true skickas e-post bara till adresser i
+ * EMAIL_ALLOWLIST (kommaseparerad, "@domän.se" tillåter en hel domän). Andra mottagare
+ * hanteras som testläge och får en förklaring på leveransen.
+ *
  * E-faktura skickas via en Peppol-accesspunkt. Tills en sådan är ansluten sparas
  * Peppol-filen i OUTBOX_DIR och kan också laddas ned från fakturan.
  * Brev skrivs ut från körningen och markeras som skickade.
  */
-export function deliveryMode(): { email: 'smtp' | 'test'; eInvoice: 'test'; outbox: string } {
+export type EmailMode = 'brevo' | 'smtp' | 'test';
+
+export function deliveryMode(): { email: EmailMode; eInvoice: 'test'; outbox: string } {
   return {
-    email: process.env.SMTP_HOST ? 'smtp' : 'test',
+    email: process.env.BREVO_API_KEY ? 'brevo' : process.env.SMTP_HOST ? 'smtp' : 'test',
     eInvoice: 'test',
     outbox: resolve(process.env.OUTBOX_DIR ?? join(process.cwd(), 'outbox')),
   };
@@ -38,9 +50,92 @@ export function smtp(): Transporter {
   return transport;
 }
 
-function mailFor(d: InvoiceDetail, pdf: Buffer, to: string) {
+/** Ett e-postmeddelande med valfria PDF-bilagor. */
+export interface OutgoingMail {
+  /** Visningsnamn för avsändaren, normalt bolagets namn. */
+  fromName: string;
+  to: string;
+  replyTo?: string | null;
+  subject: string;
+  text: string;
+  attachments: { filename: string; content: Buffer; contentType?: string }[];
+}
+
+/** Avsändaradress: MAIL_FROM, SMTP_FROM, bolagets fakturamejl eller en platshållare. */
+export function senderAddress(companyEmail?: string | null): string {
+  return process.env.MAIL_FROM?.trim() || process.env.SMTP_FROM?.trim() || companyEmail || 'no-reply@example.se';
+}
+
+/** Null om adressen får ta emot e-post, annars en förklaring till varför den spärras. */
+export function allowlistBlock(to: string): string | null {
+  if (process.env.EMAIL_ALLOWLIST_ONLY !== 'true') return null;
+  const list = (process.env.EMAIL_ALLOWLIST ?? '')
+    .split(/[,;\s]+/)
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
+  const addr = to.trim().toLowerCase();
+  const ok = list.some((e) => (e.startsWith('@') ? addr.endsWith(e) : addr === e));
+  return ok ? null : `Inte skickat: testmiljön skickar bara till tillåtna testadresser och ${to} finns inte bland dem.`;
+}
+
+function toNodemailer(m: OutgoingMail, from: string): nodemailer.SendMailOptions {
+  return {
+    from: `"${m.fromName.replace(/"/g, '')}" <${from}>`,
+    replyTo: m.replyTo ?? undefined,
+    to: m.to,
+    subject: m.subject,
+    text: m.text,
+    attachments: m.attachments.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType ?? 'application/pdf' })),
+  };
+}
+
+/** Skickar via Brevos transaktions-API (https://developers.brevo.com/reference/sendtransacemail). */
+async function sendBrevo(m: OutgoingMail, from: string): Promise<void> {
+  const res = await fetch(process.env.BREVO_API_URL ?? 'https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': process.env.BREVO_API_KEY ?? '', 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({
+      sender: { name: m.fromName.slice(0, 70), email: from },
+      to: [{ email: m.to }],
+      ...(m.replyTo ? { replyTo: { email: m.replyTo } } : {}),
+      subject: m.subject,
+      textContent: m.text,
+      attachment: m.attachments.map((a) => ({ name: a.filename, content: a.content.toString('base64') })),
+    }),
+  });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const body = (await res.json()) as { message?: string; code?: string };
+      detail = body.message ?? body.code ?? '';
+    } catch {
+      /* tomt svar */
+    }
+    if (res.status === 401) throw new Error(`Brevo nekade nyckeln (401). Kontrollera BREVO_API_KEY. ${detail}`.trim());
+    throw new Error(`Brevo svarade ${res.status}${detail ? `: ${detail}` : ''}`);
+  }
+}
+
+/**
+ * Skickar ett e-postmeddelande, eller sparar det som .eml i OUTBOX_DIR i testläge
+ * och när mottagaren spärras av EMAIL_ALLOWLIST. note förklarar en spärr.
+ */
+export async function deliverEmail(m: OutgoingMail, fileBase: string): Promise<{ status: 'sent' | 'test'; note: string | null }> {
+  const mode = deliveryMode();
+  const from = senderAddress(m.replyTo);
+  const block = mode.email === 'test' ? null : allowlistBlock(m.to);
+  if (mode.email === 'test' || block) {
+    const raw = await nodemailer.createTransport({ streamTransport: true, buffer: true }).sendMail(toNodemailer(m, from));
+    save(mode.outbox, `${fileBase}.eml`, raw.message as Buffer);
+    return { status: 'test', note: block };
+  }
+  if (mode.email === 'brevo') await sendBrevo(m, from);
+  else await smtp().sendMail(toNodemailer(m, from));
+  return { status: 'sent', note: null };
+}
+
+function mailFor(d: InvoiceDetail, pdf: Buffer, to: string): OutgoingMail {
   const title = TITLE[d.kind] ?? 'Faktura';
-  const from = process.env.SMTP_FROM ?? d.company.invoiceEmail ?? 'no-reply@example.se';
   const credit = d.kind === 'credit_note';
   const kr = (ore: number) => `${(ore / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`;
   const text = credit
@@ -51,8 +146,8 @@ function mailFor(d: InvoiceDetail, pdf: Buffer, to: string) {
       `OCR-nummer: ${d.ocr}\n\nVänliga hälsningar\n${d.company.name}` +
       (d.company.invoiceEmail ? `\n${d.company.invoiceEmail}` : '');
   return {
-    from: `"${d.company.name.replace(/"/g, '')}" <${from}>`,
-    replyTo: d.company.invoiceEmail ?? undefined,
+    fromName: d.company.name,
+    replyTo: d.company.invoiceEmail,
     to,
     subject: `${title} ${d.invoiceNr} från ${d.company.name}`,
     text,
@@ -80,17 +175,9 @@ export async function sendQueued(client: PoolClient, deliveryIds: string[]): Pro
       if (d.status !== 'issued') throw new Error('Fakturan är inte utfärdad');
       if (r.channel === 'email') {
         const pdf = await renderInvoicePdf(d);
-        const mail = mailFor(d, pdf, r.recipient);
-        if (mode.email === 'smtp') {
-          await smtp().sendMail(mail);
-          await mark(client, r.id, 'sent');
-          result.sent += 1;
-        } else {
-          const raw = await nodemailer.createTransport({ streamTransport: true, buffer: true }).sendMail(mail);
-          save(mode.outbox, `${d.companyId}-${d.invoiceNr}-${r.id}.eml`, raw.message as Buffer);
-          await mark(client, r.id, 'test');
-          result.test += 1;
-        }
+        const out = await deliverEmail(mailFor(d, pdf, r.recipient), `${d.companyId}-${d.invoiceNr}-${r.id}`);
+        await mark(client, r.id, out.status, out.note);
+        result[out.status] += 1;
       } else {
         save(mode.outbox, `${d.companyId}-${d.invoiceNr}-${r.id}.xml`, Buffer.from(peppolXml(d), 'utf8'));
         await mark(client, r.id, 'test');
@@ -109,21 +196,6 @@ async function mark(client: PoolClient, id: string, status: string, error: strin
     `update invoice_delivery set status = $2, error = $3, sent_at = case when $2 in ('sent','test') then now() else sent_at end where id = $1`,
     [id, status, error],
   );
-}
-
-/**
- * Skickar ett e-postmeddelande via SMTP, eller sparar det som .eml i OUTBOX_DIR i testläge.
- * Används även för påminnelser och kontoutdrag.
- */
-export async function sendOrSave(mail: nodemailer.SendMailOptions, fileBase: string): Promise<'sent' | 'test'> {
-  const mode = deliveryMode();
-  if (mode.email === 'smtp') {
-    await smtp().sendMail(mail);
-    return 'sent';
-  }
-  const raw = await nodemailer.createTransport({ streamTransport: true, buffer: true }).sendMail(mail);
-  save(mode.outbox, `${fileBase}.eml`, raw.message as Buffer);
-  return 'test';
 }
 
 function save(dir: string, name: string, data: Buffer) {

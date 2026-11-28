@@ -74,7 +74,7 @@ Filen hämtas i dag i internetbanken och läses in för hand. Inläsningen är s
 
 ### Utskick
 
-E-post skickas via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) är satt. Utan SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. E-faktura sparas på samma sätt som XML tills en Peppol-accesspunkt är ansluten.
+E-post skickas på riktigt via **Brevo** (HTTP-API, fungerar även där SMTP-portar är spärrade) när `BREVO_API_KEY` är satt, annars via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`) är satt. Avsändaradressen är `MAIL_FROM` (eller `SMTP_FROM`) och bolagets fakturamejl blir svarsadress. Utan Brevo eller SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. Med `EMAIL_ALLOWLIST_ONLY=true` skickas e-post bara till adresserna i `EMAIL_ALLOWLIST` (kommaseparerad, `@domän.se` tillåter en hel domän); övriga hanteras som testläge. E-faktura sparas som XML tills en Peppol-accesspunkt är ansluten.
 
 ## Hyresjustering
 

@@ -51,3 +51,17 @@ Radera projektet i Neon (*Settings → Delete project*) och skapa ett nytt i Fra
 även Neons historik och grenar, så att inget av det gamla innehållet finns kvar. Byt sedan
 `DATABASE_URL` i Render under *Environment* till den nya adressen och spara. Vid nästa start läggs
 bara koncernen, de tre bolagen och `admin@example.se` upp igen (med lösenordet i `SEED_ADMIN_PASSWORD`).
+
+## Riktig e-post i testmiljön
+
+Renders gratisnivå spärrar SMTP-portarna, så e-post skickas via Brevos HTTP-API (EU, gratis upp till
+300 mejl per dag). Lägg in tre värden under *Environment* i Render:
+
+| Nyckel | Värde |
+| --- | --- |
+| `BREVO_API_KEY` | API-nyckeln från Brevo (*SMTP & API → API keys*). Klistra aldrig in den i chatten. |
+| `MAIL_FROM` | Avsändaradressen. Måste vara verifierad som avsändare i Brevo (*Senders, domains & dedicated IPs*). |
+| `EMAIL_ALLOWLIST` | De adresser som får ta emot e-post, kommaseparerade. `@domän.se` tillåter en hel domän. |
+
+`EMAIL_ALLOWLIST_ONLY=true` står i `render.yaml`: mejl till andra adresser skickas inte utan sparas i
+testläge, och fakturan visar varför under *Utskick*. Utan `BREVO_API_KEY` körs allt i testläge.

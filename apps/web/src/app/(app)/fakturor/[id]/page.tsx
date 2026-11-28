@@ -411,8 +411,8 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
                           {x.recipient}
                           {x.sentAt ? ` · ${formatDate(x.sentAt)}` : ''}
                         </div>
-                        {x.status === 'test' && <div className="text-[12px] text-ink-3">{x.channel === 'e_invoice' ? 'E-faktura är inte ansluten ännu. Filen kan laddas ned med knappen E-faktura (XML).' : 'E-post är inte ansluten ännu, så inget nådde kunden.'}</div>}
-                        {x.error && <div className="text-[12px] text-bad">{x.error}</div>}
+                        {x.status === 'test' && !x.error && <div className="text-[12px] text-ink-3">{x.channel === 'e_invoice' ? 'E-faktura är inte ansluten ännu. Filen kan laddas ned med knappen E-faktura (XML).' : 'E-post är inte ansluten ännu, så inget nådde kunden.'}</div>}
+                        {x.error && <div className={`text-[12px] ${x.status === 'test' ? 'text-ink-3' : 'text-bad'}`}>{x.error}</div>}
                       </div>
                     ))}
                   </Card>
@@ -687,7 +687,7 @@ function EmailDialog({ open, invoice, onClose, onDone }: { open: boolean; invoic
         r.post
           ? 'Fakturan ska skickas med brev. Skriv ut PDF:en och posta den.'
           : r.test
-            ? 'Fakturan skapades i testläge. E-post är inte ansluten ännu, så inget nådde kunden.'
+            ? 'Fakturan skickades inte på riktigt (testläge). Se förklaringen under Utskick.'
             : r.failed
               ? 'Utskicket misslyckades. Se felet under Utskick.'
               : 'Fakturan är skickad.',
