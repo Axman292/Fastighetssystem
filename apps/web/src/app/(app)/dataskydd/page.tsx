@@ -5,6 +5,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Card, Dialog, ErrorNote, Field, Input, PageHeader, Table, Tabs, Td, formatDateTime } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { useSession } from '@/lib/session';
+import { INTEREST_STATUS } from '@/lib/vacancies';
 
 interface Settings {
   autoEnabled: boolean;
@@ -23,13 +24,15 @@ interface Preview {
   blocked: { id: string; customerNr: number; name: string; lastActivity: string; blockers: string[] }[];
   upcoming: { id: string; customerNr: number; name: string; purgeDate: string }[];
   imports: { id: string; batchNr: number; name: string; status: string; lastDate: string; action: 'purge' | 'delete' }[];
+  interests: { id: string; registrationNr: number; name: string; status: string; lastActivity: string }[];
+  interestRetentionMonths: number;
   unmatchedBankTransactions: number;
   workOrders?: number;
 }
 
 interface LogItem {
   id: string;
-  kind: 'anonymize' | 'accounting' | 'import' | 'extract';
+  kind: 'anonymize' | 'accounting' | 'import' | 'extract' | 'interest';
   customerId: string | null;
   customerNr: number | null;
   importBatchId: string | null;
@@ -48,11 +51,12 @@ interface RunResult {
   anonymized: number;
   accounting: number;
   imports: number;
+  interests?: number;
   bankTransactions: number;
 }
 
 const TRIGGER: Record<string, string> = { manual: 'Gallra nu', auto: 'Automatisk', request: 'På begäran' };
-const KIND: Record<string, string> = { anonymize: 'Anonymiserad', accounting: 'Bokföringsunderlag rensat', import: 'Import rensad', extract: 'Registerutdrag' };
+const KIND: Record<string, string> = { anonymize: 'Anonymiserad', accounting: 'Bokföringsunderlag rensat', import: 'Import rensad', extract: 'Registerutdrag', interest: 'Intresseanmälan borttagen' };
 
 type Tab = 'now' | 'blocked' | 'upcoming' | 'log';
 
@@ -86,7 +90,7 @@ export default function GdprPage() {
   if (error) return <ErrorNote message={error} />;
   if (!preview) return null;
 
-  const total = preview.anonymize.length + preview.accounting.length + preview.imports.length + (preview.unmatchedBankTransactions ? 1 : 0) + (preview.workOrders ? 1 : 0);
+  const total = preview.anonymize.length + preview.accounting.length + preview.imports.length + preview.interests.length + (preview.unmatchedBankTransactions ? 1 : 0) + (preview.workOrders ? 1 : 0);
 
   return (
     <>
@@ -103,7 +107,7 @@ export default function GdprPage() {
       {done && (
         <div className="mb-5 rounded-md bg-good-soft px-3 py-2 text-[13px] text-good">
           {done.runNr
-            ? `Gallring ${done.runNr} klar. Anonymiserade kunder: ${done.anonymized}. Rensat bokföringsunderlag: ${done.accounting}. Rensade importer: ${done.imports}.`
+            ? `Gallring ${done.runNr} klar. Anonymiserade kunder: ${done.anonymized}. Rensat bokföringsunderlag: ${done.accounting}. Rensade importer: ${done.imports}. Borttagna intresseanmälningar: ${done.interests ?? 0}.`
             : 'Det fanns inget att gallra.'}
         </div>
       )}
@@ -165,7 +169,8 @@ export default function GdprPage() {
           <p>
             {preview.anonymize.length} kunder anonymiseras
             {preview.accounting.length ? `, ${preview.accounting.length} får sitt bokföringsunderlag rensat` : ''}
-            {preview.imports.length ? ` och ${preview.imports.length} importer rensas` : ''}.
+            {preview.imports.length ? `, ${preview.imports.length} importer rensas` : ''}
+            {preview.interests.length ? ` och ${preview.interests.length} intresseanmälningar tas bort` : ''}.
           </p>
           <p className="text-bad">Det här går inte att ångra. Uppgifterna tas bort för gott, även ur revisionsloggen.</p>
           <div className="flex justify-end gap-2 pt-2">
@@ -277,6 +282,27 @@ function NowTab({ p }: { p: Preview }) {
               </Td>
               <Td className="tabular text-ink-2">{b.lastDate}</Td>
               <Td className="text-ink-2">{b.action === 'purge' ? 'Filer och rader rensas' : 'Tas bort'}</Td>
+            </tr>
+          ))}
+        </Table>
+      </section>
+
+      <section>
+        <h2 className="mb-1 text-[14px] font-semibold">Intresseanmälningar tas bort</h2>
+        <p className="mb-3 text-[13px] text-ink-2">
+          Anmälningar i intresselistan tas bort helt när ingen kontakt har skett på {p.interestRetentionMonths} månader. Tiden ställs in under
+          Intresselista → Formulär och inställningar.
+        </p>
+        <Table head={['Anmälan', 'Status', 'Senaste kontakt']} empty="Ingen anmälan är gammal nog.">
+          {p.interests.map((r) => (
+            <tr key={r.id}>
+              <Td>
+                <Link href={`/intresse/${r.id}`} className="hover:underline">
+                  <span className="tabular text-ink-3">{r.registrationNr}</span> <span className="font-medium">{r.name}</span>
+                </Link>
+              </Td>
+              <Td className="text-ink-2">{INTEREST_STATUS[r.status]?.label ?? r.status}</Td>
+              <Td className="tabular text-ink-2">{r.lastActivity}</Td>
             </tr>
           ))}
         </Table>
@@ -421,6 +447,7 @@ function describe(i: LogItem): string {
   const d = i.details as Record<string, number | string>;
   if (i.kind === 'import') return `import ${d.batchNr}: ${d.action === 'deleted' ? 'borttagen' : `${d.files} filer och ${d.rows} rader rensade`}`;
   if (i.kind === 'anonymize' && !i.customerNr && d.workOrdersWithoutCustomer) return `anmälaruppgifter på ${d.workOrdersWithoutCustomer} felanmälningar utan kund`;
+  if (i.kind === 'interest') return `anmälan ${d.registrationNr}`;
   if (i.kind === 'accounting' && !i.customerNr) return `betalaruppgifter på ${d.unmatchedBankTransactions} inbetalningar utan kund`;
   const parts = Object.entries(d)
     .filter(([k, v]) => k !== 'mode' && typeof v === 'number' && v > 0)

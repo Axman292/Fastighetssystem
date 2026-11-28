@@ -39,6 +39,7 @@ import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
 import { WorkOrdersController } from './work-orders/work-orders.controller';
 import { PublicWorkOrdersController } from './work-orders/public.controller';
+import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
 import { MessagesController } from './messages/messages.controller';
 import { DashboardController } from './dashboard/dashboard.controller';
 
@@ -82,6 +83,9 @@ import { DashboardController } from './dashboard/dashboard.controller';
     GdprController,
     WorkOrdersController,
     PublicWorkOrdersController,
+    VacanciesController,
+    InterestsController,
+    PublicInterestController,
     MessagesController,
     DashboardController,
   ],

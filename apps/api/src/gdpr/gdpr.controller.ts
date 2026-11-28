@@ -45,7 +45,7 @@ export class GdprController {
       const runs = (
         await client.query(
           `select r.id, r.run_nr as "runNr", r.trigger, r.anonymized_count as "anonymized", r.accounting_count as "accounting",
-                  r.import_count as "imports", r.created_at as "createdAt", u.name as "createdByName"
+                  r.import_count as "imports", r.interest_count as "interests", r.created_at as "createdAt", u.name as "createdByName"
            from gdpr_run r left join app_user u on u.id = r.created_by
            where r.company_id = $1 order by r.created_at desc limit 200`,
           [companyId],
