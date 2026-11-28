@@ -76,6 +76,14 @@ Filen hämtas i dag i internetbanken och läses in för hand. Inläsningen är s
 
 E-post skickas på riktigt via **Brevo** (HTTP-API, fungerar även där SMTP-portar är spärrade) när `BREVO_API_KEY` är satt, annars via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`) är satt. Avsändaradressen är `MAIL_FROM` (eller `SMTP_FROM`) och bolagets fakturamejl blir svarsadress. Utan Brevo eller SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. Med `EMAIL_ALLOWLIST_ONLY=true` skickas e-post bara till adresserna i `EMAIL_ALLOWLIST` (kommaseparerad, `@domän.se` tillåter en hel domän); övriga hanteras som testläge. E-faktura sparas som XML tills en Peppol-accesspunkt är ansluten.
 
+## Autogiro
+
+- **Medgivanderegister** under Autogiro: blankett som PDF (tom eller ifylld per hyresgäst), registrering av påskrivna medgivanden och godkännande eller avvisning av medgivanden som hyresgästen anmält i sin internetbank.
+- **Filer till Bankgirot** i Autogiros nya format: medgivandefil (nya, svar och makuleringar) och dragningsfil med en dragning per avi på förfallodagen och OCR som referens.
+- **Dragningar planeras** automatiskt när en aviseringskörning godkänns, för hyresgäster med medgivande. Avin och e-posten säger att beloppet dras via autogiro.
+- **Svar från Bankgirot** läses in: medgivandeavisering, medgivanden via internetbanken, betalningsspecifikation och avvisade betalningsuppdrag. Dragna hyror bokförs på avin. Misslyckade dragningar ger hyresgästen en vanlig avi att betala med OCR.
+- Autogiro påverkas inte av Bankgirots omställning 2026. Se [deploy/AUTOGIRO.md](deploy/AUTOGIRO.md) för vad som beställs hos banken.
+
 ## Hyresjustering
 
 - **Ändra hyran för många avtal på en gång** under Avtal → Hyresjustering, till exempel den årliga hyreshöjningen för bostäderna.
