@@ -31,6 +31,9 @@
   --color-bad-soft: #fef2f2;
   --color-on-accent: #ffffff;
   --color-backdrop: rgb(16 16 20 / 0.2);
+  /* Diagram: två serier som går att skilja åt även vid färgblindhet */
+  --color-chart-1: #257de0;
+  --color-chart-2: #f47230;
 
   --radius-md: 6px;
   --radius-lg: 10px;
@@ -64,6 +67,8 @@
     --color-bad: #f87171;
     --color-bad-soft: #321718;
     --color-backdrop: rgb(0 0 0 / 0.6);
+    --color-chart-1: #338ced;
+    --color-chart-2: #e76624;
     --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.07);
     --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.1);
   }

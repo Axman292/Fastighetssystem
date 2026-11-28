@@ -171,6 +171,15 @@ Under Administration → Dataskydd, per bolag.
 - **SMS** via Brevo (`SMS_PROVIDER=brevo`, samma `BREVO_API_KEY` som e-posten, SMS-krediter köps i Brevo) eller 46elks (`SMS_PROVIDER=46elks`, `ELKS_API_USERNAME`, `ELKS_API_PASSWORD`). Avsändarnamn `SMS_FROM` (högst 11 tecken), annars bolagets namn. Utan leverantör körs testläge. I testmiljön (`EMAIL_ALLOWLIST_ONLY=true` eller `SMS_ALLOWLIST_ONLY=true`) får bara numren i `SMS_ALLOWLIST` SMS.
 - Rättigheten `message.send` har koncernadministratör, ekonomiansvarig och förvaltare. Loggen tas bort när hyresgästen anonymiseras.
 
+## Startsida med nyckeltal
+
+- **Översikt** visar valt bolag eller hela koncernen: uthyrningsgrad (på hyresvärde och antal objekt), avtalad hyra per månad, obetalt och förfallet, inbetalt denna månad mot det som förfaller i månaden, lediga objekt, omatchade inbetalningar och avtal att hantera.
+- **Diagram** över fakturerat och inbetalt per månad det senaste året och obetalt efter ålder.
+- **Avtal** som slutar inom 90 dagar, uppsägningar som kommit in de senaste 30 dagarna och bevakningslistan för avtal.
+- **Uthyrning per fastighet** och, i koncernvyn, en tabell per bolag.
+- Varje tal länkar till listan det är räknat ur. Talen kommer från `GET /dashboard` (`apps/api/src/dashboard`).
+- **Andra moduler kan lägga till egna kort**, till exempel öppna felanmälningar, med `registerDashboardExtra` i `apps/api/src/dashboard/extras.ts`.
+
 ## Struktur
 
 ```
