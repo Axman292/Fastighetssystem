@@ -339,6 +339,13 @@ export async function loadInvoice(client: PoolClient, id: string) {
     )
   ).rows;
   const company = await companyInfo(client, inv.companyId);
+  // Senaste autogirodragningen för avin, så att avin kan säga att den dras eller att dragningen misslyckades
+  const autogiro = ((
+    await client.query(
+      `select status, payment_date::text as "paymentDate", message from autogiro_payment where invoice_id = $1 order by created_at desc limit 1`,
+      [id],
+    )
+  ).rows[0] ?? null) as { status: 'planned' | 'sent' | 'paid' | 'failed' | 'cancelled'; paymentDate: string; message: string | null } | null;
   const live = inv.status === 'draft' ? (await billToFor(client, inv.customerId)).billTo : null;
   return {
     ...inv,
@@ -350,6 +357,7 @@ export async function loadInvoice(client: PoolClient, id: string) {
     credited,
     deliveries,
     company,
+    autogiro,
   };
 }
 

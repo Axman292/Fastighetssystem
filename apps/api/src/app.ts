@@ -42,6 +42,7 @@ import { ContractAlertScheduler } from './contracts/alert-digest';
 import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
 import { MessagesController } from './messages/messages.controller';
 import { DashboardController } from './dashboard/dashboard.controller';
+import { AutogiroController } from './autogiro/autogiro.controller';
 
 @Module({
   controllers: [
@@ -87,6 +88,7 @@ import { DashboardController } from './dashboard/dashboard.controller';
     PublicInterestController,
     MessagesController,
     DashboardController,
+    AutogiroController,
   ],
   providers: [
     AuthService,

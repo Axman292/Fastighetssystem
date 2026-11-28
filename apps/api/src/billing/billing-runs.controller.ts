@@ -26,6 +26,7 @@ import { lastDayOfMonth } from '../contracts/contract-rules';
 import { addDays } from '../contracts/contract-rules';
 import { INVOICE_LIST_SQL, issueInvoices, loadInvoice } from './invoice-store';
 import { sendQueued } from './delivery';
+import { planPayments } from '../autogiro/autogiro-store';
 import { renderInvoicesPdf } from './invoice-pdf';
 import { periodLabel } from './billing-rules';
 
@@ -247,6 +248,8 @@ export class BillingRunsController {
       const ids = (await client.query(`select id from invoice where billing_run_id = $1 and status = 'draft'`, [id])).rows.map((r) => r.id);
       if (!ids.length) throw new BadRequestException('Körningen innehåller inga avier');
       await issueInvoices(client, companyId, ids);
+      // Hyresgäster med autogiro får sin dragning planerad på förfallodagen
+      await planPayments(client, companyId, ids);
       await client.query(`update billing_run set status = 'issued', issued_at = now(), issued_by = app.current_user_id() where id = $1`, [id]);
       return { ok: true, run: await loadRun(client, id) };
     });
