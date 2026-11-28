@@ -76,6 +76,16 @@ Filen hämtas i dag i internetbanken och läses in för hand. Inläsningen är s
 
 E-post skickas via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) är satt. Utan SMTP körs **testläge**: meddelandet sparas som `.eml`-fil i `OUTBOX_DIR` (standard `./outbox`) och inget når hyresgästen. E-faktura sparas på samma sätt som XML tills en Peppol-accesspunkt är ansluten.
 
+## Hyresjustering
+
+- **Ändra hyran för många avtal på en gång** under Avtal → Hyresjustering, till exempel den årliga hyreshöjningen för bostäderna.
+- **Urval** på objekttyp (snabbval Bostäder, Lokaler, Parkering och förråd), fastighet, avtalstyp och vilka hyresrader (artiklar) som ändras. Avtal med indexklausul hoppas normalt över, eftersom de räknas upp med KPI.
+- **Ändring** i procent (avrundad till hel krona, tiotal kronor eller öre) eller i kronor per månad, från ett datum. Negativt värde sänker hyran.
+- **Förhandsgranskning** med hyra före och efter per objekt och avtal, total ökning per månad och år, och möjlighet att välja bort enskilda rader. Rader som redan ändrats från datumet eller har en senare ändring hoppas över. Är perioden redan aviserad läggs skillnaden på nästa avi.
+- **Objektens hyra** ändras med samma procent eller belopp, även för lediga objekt, så att nästa avtal får rätt hyra.
+- **Historik.** Den gamla raden avslutas dagen före och finns kvar. Varje justering sparas med nummer, urval, vem som gjorde den och varje ändrad rad, och noteras på avtalen.
+- **Ångra** går så länge den nya hyran inte har aviserats och raderna inte ändrats efteråt.
+
 ## Vad som finns i fas 6
 
 - **Kontoplan.** Varje bolag får ett urval BAS-konton för fastighetsbolag (även nya bolag). Konton kan läggas till och kompletteras från Hogia via importcentralen. Varje konto hör till en rapportgrupp (hyresintäkter, drift, underhåll, fastighetsskatt, försäkring, administration, räntor, investeringar) som bestäms av kontonumret men kan ändras.

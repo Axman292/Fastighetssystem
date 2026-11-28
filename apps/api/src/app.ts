@@ -29,6 +29,7 @@ import { AccountsController, SuppliersController } from './suppliers/suppliers.c
 import { SupplierInvoicesController } from './suppliers/supplier-invoices.controller';
 import { EconomyController } from './economy/economy.controller';
 import { ArticlesController } from './articles/articles.controller';
+import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.controller';
 
 @Module({
   controllers: [
@@ -58,6 +59,7 @@ import { ArticlesController } from './articles/articles.controller';
     SupplierInvoicesController,
     EconomyController,
     ArticlesController,
+    RentAdjustmentsController,
   ],
   providers: [
     AuthService,
