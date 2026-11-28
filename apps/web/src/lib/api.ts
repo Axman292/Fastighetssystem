@@ -26,8 +26,14 @@ export async function api<T>(
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/login')) {
+    if (res.status === 401 && typeof window !== 'undefined' && !path.startsWith('/auth/')) {
+      window.location.href = '/login?utloggad=1';
+    }
+    if (res.status === 401 && typeof window !== 'undefined' && path === '/auth/me') {
       window.location.href = '/login';
+    }
+    if (res.status === 403 && data.code === 'mfa_setup_required' && typeof window !== 'undefined' && window.location.pathname !== '/konto') {
+      window.location.href = '/konto';
     }
     throw new ApiError(res.status, data.message ?? 'Något gick fel', data.fields ?? []);
   }
@@ -43,9 +49,12 @@ export interface CompanyAccess {
 }
 
 export interface Me {
-  user: { id: string; name: string; email: string; isGroupAdmin: boolean };
+  user: { id: string; name: string; email: string; isGroupAdmin: boolean; mfaEnabled: boolean };
   companies: CompanyAccess[];
   activeCompanyId: string | null;
+  /** Koncernen kräver tvåstegsverifiering och den är inte uppsatt än. */
+  mfaSetupRequired: boolean;
+  sessionIdleMinutes: number;
 }
 
 export interface Company {

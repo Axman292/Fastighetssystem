@@ -234,3 +234,11 @@ export function periodOptions(year: number): { key: string; label: string; from:
   }
   return out;
 }
+
+/** Kort beskrivning av webbläsare och dator från user-agent. */
+export function describeAgent(ua: string | null): string {
+  if (!ua) return 'Okänd enhet';
+  const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Webbläsare';
+  const os = /iPhone|iPad/.test(ua) ? 'iPhone/iPad' : /Android/.test(ua) ? 'Android' : /Mac OS/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+  return os ? `${browser} på ${os}` : browser;
+}
