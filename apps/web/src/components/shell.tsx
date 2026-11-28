@@ -19,6 +19,7 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/utskick', label: 'Utskick', icon: <Icon d="M3 9.5 16.5 4 13 17l-3.5-5.5zM9.5 11.5 16.5 4" /> },
   { href: '/avtal', label: 'Avtal', icon: <Icon d="M6 3h6l3 3v11H6zM9 9h4M9 12h4" /> },
   { href: '/arenden', label: 'Felanmälan', icon: <Icon d="M14.5 3.5a3 3 0 0 0-3.9 3.9L4 14v2h2l6.6-6.6a3 3 0 0 0 3.9-3.9l-1.8 1.8-1.7-.3-.3-1.7z" /> },
+  { href: '/avtal/bevakning', label: 'Avtalsbevakning', icon: <Icon d="M4 5h12v11H4zM4 8.5h12M7.5 3v3.5M12.5 3v3.5M7 12l2 1.5 3.5-3" /> },
   { href: '/avisering', label: 'Avisering', icon: <Icon d="M4 6h12v9H4zM4 6l6 5 6-5" /> },
   { href: '/fakturor', label: 'Fakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3" /> },
   { href: '/inbetalningar', label: 'Inbetalningar', icon: <Icon d="M3 7h14v9H3zM3 10h14M6 13h3" /> },
@@ -51,7 +52,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <CompanySwitcher />
         <nav className="mt-4 space-y-0.5">
           {nav.map((n) => (
-            <NavItem key={n.label} {...n} active={n.href === '/' ? pathname === '/' : pathname.startsWith(n.href) && n.href !== '#'} />
+            <NavItem key={n.label} {...n} active={isActive(n.href, pathname)} />
           ))}
         </nav>
         <div className="mt-6 px-2 text-[11.5px] font-medium text-ink-3">Administration</div>
@@ -86,6 +87,13 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
     </div>
   );
+}
+
+/** Aktiv menypunkt. När flera passar (Avtal och Avtalsbevakning) vinner den längsta. */
+function isActive(href: string, pathname: string): boolean {
+  if (href === '/') return pathname === '/';
+  if (href === '#' || !(pathname === href || pathname.startsWith(`${href}/`))) return false;
+  return !nav.some((o) => o.href.length > href.length && o.href.startsWith(`${href}/`) && (pathname === o.href || pathname.startsWith(`${o.href}/`)));
 }
 
 function NavItem({ href, label, icon, active, soon }: { href: string; label: string; icon: ReactNode; active: boolean; soon?: boolean }) {

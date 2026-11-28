@@ -161,6 +161,24 @@ Under Administration → Dataskydd, per bolag.
 - **Registerutdrag** (artikel 15) för en hyresgäst som PDF eller JSON från kundsidan, med ändamål, rättslig grund, lagringstider, mottagare och rättigheter. Varje utdrag loggas.
 - **Anonymisera på begäran** från kundsidan, utan att vänta på lagringstiden. Hindren och bokföringslagen gäller fortfarande.
 
+## Avtalsbevakning
+
+Under **Avtal → Avtalsbevakning** (`/avtal/bevakning`) säger systemet till i god tid om allt som rör avtalens datum:
+
+- **Sista dag för uppsägning** av tidsbestämda avtal, räknat ur uppsägningstiden. För lokaler även som påminnelse om att säga upp för villkorsändring (omförhandling). Har dagen passerat och avtalet förlängs visas det som **Förlängs automatiskt**.
+- **Avtal som upphör**: uppsagda avtal och tidsbestämda avtal utan förlängning.
+- **Omförhandling** enligt datumet på avtalet.
+- **KPI-uppräkning** enligt indexklausulen, med besked om KPI för basmånaden är inlagt. Försvinner när uppräkningen är gjord.
+- **Hyresändringar**: nya hyresrader som börjar gälla (trappor, hyresjusteringar) och rader som upphör utan att ersättas, till exempel en tidsbegränsad rabatt.
+- **Säkerheter**: deposition eller bankgaranti som ska lämnas, och bankgaranti eller borgen som löper ut före avtalet (nytt fält *Gäller till* på säkerheten).
+- Utkast som snart ska börja gälla och aktiva avtal utan hyra.
+
+Påminnelserna räknas fram ur avtalen vid varje visning, så de stämmer alltid. Varje påminnelse kan **markeras som klar** eller **skjutas upp** till ett datum, med en anteckning som också hamnar i avtalets händelser. Det kan ångras.
+
+- **Att göra** grupperat på försenat, närmaste 30 dagarna och längre fram. Samma lista visas under *Att hantera* på Avtal och på översikten.
+- **Kalender** per månad med alla avtalsdatum, och en kalenderfil (.ics) för Outlook, Google Kalender eller iPhone med de kommande tolv månaderna.
+- **På avtalssidan** visas avtalets kommande datum de närmaste två åren.
+- **Inställningar per bolag**: framförhållning i dagar per typ (standard 120 dagar för uppsägning och omförhandling, 90 för avtalsslut, 60 för KPI och säkerheter, 30 för hyresändringar) och **sammanfattning per e-post** varje dag eller en gång i veckan till valda användare, tidigast kl. 7. Den som är mottagare i flera bolag får ett samlat mejl, och inget skickas när det inte finns något att hantera. Kan också skickas direkt för att prova. Automatiskt utskick stängs av med `CONTRACT_ALERTS_AUTO=off`.
 ## Utskick till hyresgäster
 
 - **E-post och SMS** till alla hyresgäster eller ett urval under *Utskick*: nuvarande, uppsagda, kommande eller tidigare hyresgäster, fastigheter, objekttyper och avtalstyper. Kontaktpersoner kan tas med.

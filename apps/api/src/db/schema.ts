@@ -472,6 +472,8 @@ export const contractDeposit = pgTable('contract_deposit', {
   dueDate: date('due_date'),
   receivedDate: date('received_date'),
   returnedDate: date('returned_date'),
+  /** Bankgaranti eller borgen gäller till och med. */
+  validUntil: date('valid_until'),
   note: text('note'),
   ...audit,
 });
