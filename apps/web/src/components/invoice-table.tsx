@@ -72,7 +72,9 @@ export function InvoiceTable({
             </Td>
           )}
           {showCompany && <Td className="text-ink-2">{r.companyName}</Td>}
-          <Td className="text-ink-2">{fmtPeriod(r.periodFrom, r.periodTo) || r.invoiceDate}</Td>
+          <Td className="text-ink-2" sortValue={r.periodFrom ?? r.invoiceDate}>
+            {fmtPeriod(r.periodFrom, r.periodTo) || r.invoiceDate}
+          </Td>
           <Td className="tabular text-ink-2">{r.kind === 'credit_note' ? '–' : r.dueDate}</Td>
           <Td className="tabular">{fmtOre(r.totalOre, true)}</Td>
           <Td className="tabular">{r.kind === 'credit_note' || r.status === 'draft' ? '–' : fmtOre(r.balanceOre, true)}</Td>

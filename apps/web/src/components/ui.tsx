@@ -1,6 +1,20 @@
 'use client';
 
-import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, useEffect } from 'react';
+import {
+  ButtonHTMLAttributes,
+  Children,
+  InputHTMLAttributes,
+  ReactElement,
+  ReactNode,
+  SelectHTMLAttributes,
+  isValidElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { usePathname } from 'next/navigation';
+import { SortDir, compareSortValues, normalizePath, parseSortValue, useSortState } from '@/lib/table-sort';
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(' ');
@@ -95,29 +109,189 @@ export function Badge({ tone = 'neutral', children }: { tone?: 'neutral' | 'good
   );
 }
 
-export function Table({ head, children, empty }: { head: ReactNode[]; children: ReactNode; empty?: ReactNode }) {
-  const rows = Array.isArray(children) ? children.filter(Boolean) : children ? [children] : [];
+/** Rubrikens text, även när rubriken är ett element som <span className="text-right">Belopp</span>. */
+function headText(h: ReactNode): string {
+  if (typeof h === 'string' || typeof h === 'number') return String(h);
+  if (Array.isArray(h)) return h.map(headText).join('');
+  if (isValidElement<{ children?: ReactNode }>(h)) return headText(h.props.children);
+  return '';
+}
+
+function headAlignedRight(h: ReactNode): boolean {
+  return isValidElement<{ className?: string }>(h) && /\btext-right\b/.test(h.props.className ?? '');
+}
+
+/** Liten pil som visar sorteringen. Utan aktiv sortering syns den svagt när man pekar på rubriken. */
+export function SortArrow({ dir }: { dir?: SortDir | null }) {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 10 10"
+      aria-hidden
+      className={cx('shrink-0', dir ? 'text-ink' : 'text-ink-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100')}
+    >
+      {dir === 'desc' ? (
+        <path d="M5 8 1.5 3.5h7z" fill="currentColor" />
+      ) : dir === 'asc' ? (
+        <path d="M5 2 8.5 6.5h-7z" fill="currentColor" />
+      ) : (
+        <path d="M5 1 7.5 4h-5zM5 9 2.5 6h5z" fill="currentColor" />
+      )}
+    </svg>
+  );
+}
+
+/** Klickbar rubrik. Används av Table och av tabeller som sorterar på egen data (t.ex. rapporter). */
+export function SortHeader({
+  label,
+  dir,
+  onClick,
+  alignRight,
+  children,
+}: {
+  label: string;
+  dir?: SortDir | null;
+  onClick: () => void;
+  alignRight?: boolean;
+  children?: ReactNode;
+}) {
+  const next = !dir ? 'stigande' : dir === 'asc' ? 'fallande' : 'ursprunglig ordning';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Sortera på ${label.toLowerCase()} (${next})`}
+      className={cx(
+        'group -mx-1 inline-flex items-center gap-1 whitespace-nowrap rounded px-1 font-medium hover:text-ink focus-visible:outline-2 focus-visible:outline-accent',
+        dir && 'text-ink',
+        alignRight && 'w-[calc(100%+0.5rem)] justify-end',
+      )}
+    >
+      {children ?? label}
+      <SortArrow dir={dir} />
+    </button>
+  );
+}
+
+/**
+ * Standardtabellen. Rubriker med text går att klicka på för att sortera
+ * (stigande, fallande, tillbaka). Sorteringen läser det som visas i cellerna, så
+ * belopp, datum, namn (svensk ordning, å ä ö sist) och status sorteras som man
+ * ser dem. En cell kan ange eget sorteringsvärde med <Td sortValue={…}>.
+ * Summarader läggs i `foot` så att de stannar sist. Valet sparas per sida och tabell.
+ */
+export function Table({
+  head,
+  children,
+  empty,
+  foot,
+  sortable = true,
+  sortKey,
+}: {
+  head: ReactNode[];
+  children: ReactNode;
+  empty?: ReactNode;
+  /** Rader som alltid ligger sist, t.ex. summa. */
+  foot?: ReactNode;
+  /** false för tabeller där ordningen betyder något, t.ex. redigerbara rader. */
+  sortable?: boolean;
+  /** Egen nyckel för att spara sorteringen. Standard är sidan och rubrikerna. */
+  sortKey?: string;
+}) {
+  const items = Children.toArray(children).filter(isValidElement) as ReactElement[];
+  const labels = head.map(headText);
+  const pathname = usePathname() ?? '';
+  // "Bolag" visas bara när alla bolag är valda; den ska inte ge en ny nyckel.
+  const key = sortKey ?? `${normalizePath(pathname)}|${labels.filter((l) => l && l !== 'Bolag').join('|')}`;
+  const { sort, toggle } = useSortState(key);
+  const col = sort ? labels.indexOf(sort.label) : -1;
+  const active = sortable && sort && col >= 0 ? { col, dir: sort.dir } : null;
+
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [rowsMatch, setRowsMatch] = useState(true);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+
+  let shown = items;
+  if (active && order) {
+    const byKey = new Map(items.map((el) => [String(el.key), el]));
+    const seen = new Set<string>();
+    shown = [];
+    for (const k of order) {
+      const el = byKey.get(k);
+      if (el) {
+        shown.push(el);
+        seen.add(k);
+      }
+    }
+    for (const el of items) if (!seen.has(String(el.key))) shown.push(el);
+  }
+
+  // Läser de visade cellerna efter varje rendering och ordnar raderna. Körs innan
+  // skärmen ritas, så ingen hoppande lista syns. Ordningen är entydig (lika värden
+  // behåller ursprunglig ordning) och blir därför stabil efter en omgång.
+  useLayoutEffect(() => {
+    const tbody = tbodyRef.current;
+    if (!tbody) return;
+    const match = tbody.rows.length === shown.length;
+    if (match !== rowsMatch) setRowsMatch(match);
+    if (!active || !match) {
+      if (order) setOrder(null);
+      return;
+    }
+    const original = new Map(items.map((el, i) => [String(el.key), i]));
+    const values = shown.map((el, i) => {
+      const cell = tbody.rows[i].cells[active.col] as HTMLTableCellElement | undefined;
+      const raw = cell ? (cell.dataset.sort ?? cell.textContent ?? '') : '';
+      return { key: String(el.key), idx: original.get(String(el.key)) ?? i, v: parseSortValue(raw) };
+    });
+    values.sort((a, b) => compareSortValues(a.v, b.v, active.dir) || a.idx - b.idx);
+    const next = values.map((x) => x.key);
+    const same = (o: string[] | null) => !!o && o.length === next.length && o.every((k, i) => k === next[i]);
+    if (!same(order) || !same(shown.map((el) => String(el.key)))) setOrder(next);
+  });
+
+  const canSort = sortable && rowsMatch && items.length > 1;
   return (
     <Card className="overflow-hidden">
       <table className="w-full text-left text-[13px]">
         <thead>
           <tr className="border-b border-line bg-subtle/60">
-            {head.map((h, i) => (
-              <th key={i} className="h-8 px-4 text-[12px] font-medium text-ink-3">
-                {h}
-              </th>
-            ))}
+            {head.map((h, i) => {
+              const label = labels[i].trim();
+              const dir = active?.col === i ? active.dir : null;
+              return (
+                <th
+                  key={i}
+                  className="h-8 px-4 text-[12px] font-medium text-ink-3"
+                  aria-sort={dir ? (dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  {canSort && label ? (
+                    <SortHeader label={label} dir={dir} onClick={() => toggle(label)} alignRight={headAlignedRight(h)} />
+                  ) : (
+                    h
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">{children}</tbody>
+        <tbody ref={tbodyRef} className="divide-y divide-line">
+          {shown}
+        </tbody>
+        {foot && <tfoot className="border-t border-line">{foot}</tfoot>}
       </table>
-      {rows.length === 0 && empty && <div className="px-4 py-10 text-center text-[13px] text-ink-3">{empty}</div>}
+      {items.length === 0 && empty && <div className="px-4 py-10 text-center text-[13px] text-ink-3">{empty}</div>}
     </Card>
   );
 }
 
-export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={cx('h-10 px-4', className)}>{children}</td>;
+export function Td({ children, className, sortValue }: { children?: ReactNode; className?: string; sortValue?: string | number | null }) {
+  return (
+    <td className={cx('h-10 px-4', className)} data-sort={sortValue === undefined ? undefined : String(sortValue ?? '')}>
+      {children}
+    </td>
+  );
 }
 
 export function Dialog({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {

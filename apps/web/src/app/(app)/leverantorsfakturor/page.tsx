@@ -93,7 +93,26 @@ export default function SupplierInvoicesPage() {
         ]}
       />
       {tab === 'ledger' ? (
-        <Table head={['Leverantör', ...(active ? [] : ['Bolag']), 'Fakturor', 'Ej förfallet', '1–30 dagar', '31–60 dagar', 'Över 60 dagar', 'Obetalt']} empty="Inga obetalda leverantörsfakturor.">
+        <Table
+          head={['Leverantör', ...(active ? [] : ['Bolag']), 'Fakturor', 'Ej förfallet', '1–30 dagar', '31–60 dagar', 'Över 60 dagar', 'Obetalt']}
+          empty="Inga obetalda leverantörsfakturor."
+          foot={
+            total &&
+            ledger &&
+            ledger.suppliers.length > 1 && (
+              <tr className="bg-subtle/60 font-medium">
+                <Td>Summa</Td>
+                {!active && <Td />}
+                <Td />
+                <Td className="tabular">{fmtOre(total.n)}</Td>
+                <Td className="tabular">{fmtOre(total.a)}</Td>
+                <Td className="tabular">{fmtOre(total.m)}</Td>
+                <Td className="tabular">{fmtOre(total.o)}</Td>
+                <Td className="tabular">{fmtOre(total.b)}</Td>
+              </tr>
+            )
+          }
+        >
           {ledger?.suppliers.map((r) => (
             <tr key={r.supplierId}>
               <Td className="font-medium">
@@ -109,18 +128,6 @@ export default function SupplierInvoicesPage() {
               <Td className="tabular font-medium">{fmtOre(r.balanceOre)}</Td>
             </tr>
           ))}
-          {total && ledger && ledger.suppliers.length > 1 && (
-            <tr className="bg-subtle/60 font-medium">
-              <Td>Summa</Td>
-              {!active && <Td />}
-              <Td />
-              <Td className="tabular">{fmtOre(total.n)}</Td>
-              <Td className="tabular">{fmtOre(total.a)}</Td>
-              <Td className="tabular">{fmtOre(total.m)}</Td>
-              <Td className="tabular">{fmtOre(total.o)}</Td>
-              <Td className="tabular">{fmtOre(total.b)}</Td>
-            </tr>
-          )}
         </Table>
       ) : (
         <>
