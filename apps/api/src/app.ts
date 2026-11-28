@@ -37,6 +37,7 @@ import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
+import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
 import { MessagesController } from './messages/messages.controller';
 import { DashboardController } from './dashboard/dashboard.controller';
 import { AutogiroController } from './autogiro/autogiro.controller';
@@ -79,6 +80,9 @@ import { AutogiroController } from './autogiro/autogiro.controller';
     PaymentPlansController,
     CollectionCasesController,
     GdprController,
+    VacanciesController,
+    InterestsController,
+    PublicInterestController,
     MessagesController,
     DashboardController,
     AutogiroController,

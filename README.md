@@ -237,3 +237,11 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 ## Nästa fas
 
 Bestäms tillsammans med axel. Bokföringen förs över till Hogia med SIE-fil; en direktkoppling mot Hogias API väntar.
+
+## Lediga objekt och intresselista
+
+- **Lediga objekt** visar objekt som står lediga i dag och objekt som blir lediga när ett avtal sägs upp eller löper ut utan att ett nytt tar vid. Allt räknas fram ur avtalen. Per objekt visas ledigt sedan, antal dagar, hyra och förlorad hyra (månadshyra × 12 / 365 per dag), och överst uthyrningsgrad, hyresbortfall per månad och hittills i år.
+- **Intresselista** med anmälningar från personer och företag: önskad objekttyp, fastigheter, minsta antal rum och yta, högsta hyra och inflyttningsdatum. Status ny, kontaktad, erbjuden, blev hyresgäst, tackade nej eller återkallad, och interna anteckningar.
+- **Publikt formulär** (`/intresseanmalan/<nyckel>`) som slås på per bolag under Intresselista → Formulär och inställningar. Den som anmäler sig måste godkänna samtyckestexten, som sparas på anmälan. Formuläret har spärr mot många anmälningar från samma adress och en fälla för robotar.
+- **Matchning.** Varje ledigt objekt visar hur många i intresselistan som passar, först anmäld först. Ett objekt kan erbjudas och svaret noteras. **Gör till hyresgäst** lägger upp intressenten som hyresgäst och skapar ett avtalsutkast för objektet med objektets hyra, i en transaktion.
+- **GDPR.** Anmälningar tas bort helt när ingen kontakt skett under lagringstiden (standard 12 månader) i den vanliga gallringen under Dataskydd. En anmälan kan också tas bort direkt på begäran; personuppgifterna maskas då i revisionsloggen.
