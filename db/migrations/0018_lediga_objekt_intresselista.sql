@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0017 Lediga objekt och intresselista.
+-- 0018 Lediga objekt och intresselista.
 --
 -- Intresseanmälningar från personer och företag som vill hyra. En
 -- anmälan kommer från det publika formuläret (med samtycke) eller läggs
