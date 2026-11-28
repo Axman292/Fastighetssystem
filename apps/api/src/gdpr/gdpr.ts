@@ -358,6 +358,8 @@ async function anonymizeCustomer(client: PoolClient, companyId: string, c: Plan[
     : [];
   await client.query('update invoice_delivery set recipient = null where id = any($1::uuid[])', [deliveryIds]);
   d.deliveries = deliveryIds.length;
+  // Utskick till hyresgästen (e-post och SMS) är inget räkenskapsmaterial och tas bort helt.
+  d.messages = (await client.query('delete from message_recipient where customer_id = $1', [c.id])).rowCount ?? 0;
 
   const docIds = await ids(
     client,

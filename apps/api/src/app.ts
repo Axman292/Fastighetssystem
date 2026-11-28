@@ -38,6 +38,8 @@ import { CollectionCasesController, LateInterestController, PaymentPlansControll
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
 import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
+import { MessagesController } from './messages/messages.controller';
+import { DashboardController } from './dashboard/dashboard.controller';
 
 @Module({
   controllers: [
@@ -80,6 +82,8 @@ import { InterestsController, PublicInterestController, VacanciesController } fr
     VacanciesController,
     InterestsController,
     PublicInterestController,
+    MessagesController,
+    DashboardController,
   ],
   providers: [
     AuthService,

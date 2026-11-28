@@ -8,6 +8,7 @@ import { Badge, Button, ErrorNote, PageHeader, Stat, Table, Tabs, Td } from '@/c
 import { api } from '@/lib/api';
 import { PAYMENT_METHOD_LABEL, fmtOre, formatDate } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { useUrlTab } from '@/lib/url-tab';
 
 interface BankFileRow {
   id: string;
@@ -35,6 +36,7 @@ export default function PaymentsPage() {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>('files');
+  useUrlTab(setTab, ['files', 'todo', 'unallocated', 'payments']);
   const [files, setFiles] = useState<BankFileRow[] | null>(null);
   const [todo, setTodo] = useState<BankTx[] | null>(null);
   const [unallocated, setUnallocated] = useState<PaymentRow[] | null>(null);
