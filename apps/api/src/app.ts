@@ -39,6 +39,7 @@ import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
 import { ContractAlertsController } from './contracts/alerts.controller';
 import { ContractAlertScheduler } from './contracts/alert-digest';
+import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
 import { MessagesController } from './messages/messages.controller';
 import { DashboardController } from './dashboard/dashboard.controller';
 
@@ -81,6 +82,9 @@ import { DashboardController } from './dashboard/dashboard.controller';
     CollectionCasesController,
     GdprController,
     ContractAlertsController,
+    VacanciesController,
+    InterestsController,
+    PublicInterestController,
     MessagesController,
     DashboardController,
   ],

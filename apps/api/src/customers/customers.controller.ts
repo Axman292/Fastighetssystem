@@ -39,7 +39,7 @@ export function normalizePersonalId(input: string): string | null {
   return `${full.slice(0, 8)}-${full.slice(8)}`;
 }
 
-const customerSchema = z
+export const customerSchema = z
   .object({
     kind: z.enum(['person', 'organization']),
     name: z.string().trim().min(1, 'Ange namn').max(200),

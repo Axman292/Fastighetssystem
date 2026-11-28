@@ -41,6 +41,7 @@ class Session {
   get = <T = Json>(p: string) => this.call<T>('GET', p);
   post = <T = Json>(p: string, b: unknown = {}) => this.call<T>('POST', p, b);
   patch = <T = Json>(p: string, b: unknown) => this.call<T>('PATCH', p, b);
+  put = <T = Json>(p: string, b: unknown) => this.call<T>('PUT', p, b);
 }
 
 /** Lägger till Luhn-kontrollsiffra (personnummer, 10 siffror ÅÅMMDDNNNK). */
@@ -313,6 +314,16 @@ export async function seedDemo(email: string, password: string, log = console.lo
       await supplierInvoice(care.id, `${month}-01`, coded('5193', 9000, 'Fastighetsskötsel'), i < 2 ? 'paid' : 'approved');
     }
     await supplierInvoice(builder.id, `${months[1]}-14`, coded('5170', 24000, 'Byte av ytterdörrar'), 'approved');
+
+    // ---------- Intresselista ----------
+    await s.post('/auth/switch-company', { companyId: pdf });
+    const interestSettings = await s.get<Json>('/interests/settings');
+    await s.put('/interests/settings', { ...interestSettings, formEnabled: true, introText: 'Anmäl dig så hör vi av oss när något blir ledigt.' });
+    const interest = (body: Json) => s.post('/interests', body);
+    await interest({ name: 'Hanna Holm', email: 'hanna@example.se', phone: '070-000 00 01', objectTypes: ['apartment'], minRooms: 2, maxRent: 11000, householdSize: 2 });
+    await interest({ name: 'Ivar Isaksson', email: 'ivar@example.se', objectTypes: ['apartment'], minRooms: 1, message: 'Söker etta eller tvåa nära centrum.' });
+    await interest({ name: 'Johanna Jönsson', phone: '070-000 00 03', objectTypes: ['parking', 'storage'] });
+    await interest({ kind: 'organization', name: 'Kaffebaren Exempel AB', contactPerson: 'Karl Kvist', email: 'karl@example.se', objectTypes: ['commercial', 'restaurant'], minAreaM2: 60 });
 
     log(
       `Demodata upplagd: 4 fastigheter, ${contracts.length} avtal och avier för ${months[0]} till ${months[months.length - 1]}.`,
