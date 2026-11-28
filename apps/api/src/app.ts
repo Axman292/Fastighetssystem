@@ -24,6 +24,7 @@ import { InvoicesController } from './billing/invoices.controller';
 import { PaymentsController } from './payments/payments.controller';
 import { BankFilesController, BankTransactionsController } from './payments/bank-files.controller';
 import { RemindersController } from './payments/reminders.controller';
+import { BankConnectionsController } from './payments/bank-connections.controller';
 import { LedgerController } from './payments/ledger.controller';
 import { ChargesController } from './billing/charges.controller';
 import { AccountsController, SuppliersController } from './suppliers/suppliers.controller';
@@ -34,6 +35,8 @@ import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.c
 import { ReportsController } from './reports/reports.controller';
 import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
+import { GdprController } from './gdpr/gdpr.controller';
+import { GdprScheduler } from './gdpr/gdpr-scheduler';
 
 @Module({
   controllers: [
@@ -57,6 +60,7 @@ import { CollectionCasesController, LateInterestController, PaymentPlansControll
     PaymentsController,
     BankFilesController,
     BankTransactionsController,
+    BankConnectionsController,
     RemindersController,
     LedgerController,
     AccountsController,
@@ -71,9 +75,11 @@ import { CollectionCasesController, LateInterestController, PaymentPlansControll
     ReferenceRatesController,
     PaymentPlansController,
     CollectionCasesController,
+    GdprController,
   ],
   providers: [
     AuthService,
+    GdprScheduler,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DbErrorsFilter },
   ],

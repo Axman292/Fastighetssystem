@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0015 Dröjsmålsränta, avbetalningsplaner och inkasso.
+-- 0016 Dröjsmålsränta, avbetalningsplaner och inkasso.
 --
 --  * Dröjsmålsränta debiteras på riktigt: referensräntan + 8 procentenheter
 --    enligt räntelagen (eller avtalad ränta). Räntan läggs på nästa avi som
@@ -14,7 +14,7 @@
 --  * Samma dag på en faktura kan aldrig räntedebiteras två gånger.
 --  * En faktura kan bara ingå i en aktiv avbetalningsplan och ett aktivt
 --    inkassoärende åt gången.
--- (Numret 0015 lämnar plats för migreringar som byggs samtidigt.)
+-- (Kommer efter 0015, GDPR-gallring.)
 -- =====================================================================
 
 -- ---------------------------------------------------------------------

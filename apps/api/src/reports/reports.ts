@@ -858,6 +858,57 @@ async function moves({ client, f, multi }: BuildCtx): Promise<ReportBody> {
 
 // ---------------------------------------------------------------------
 
+// ---------------------------------------------------------------------
+// Omatchade inbetalningar
+// ---------------------------------------------------------------------
+
+/** Inbetalningar från banken som inte kunnat kopplas till en avi och väntar på hantering. */
+async function unmatchedPayments({ client, f, multi }: BuildCtx): Promise<ReportBody> {
+  const { rows } = await client.query(
+    `select co.name as company, t.payment_date::text as day, t.amount_ore::float as amount, t.kind, t.reference, t.payer_name as payer,
+            t.note, t.match_rule as rule, cu.name as suggested, f.filename, f.source,
+            ($1::date - t.payment_date) as age
+     from bank_transaction t join bank_file f on f.id = t.bank_file_id join company co on co.id = t.company_id
+     left join customer cu on cu.id = t.customer_id
+     where t.status = 'unmatched' and t.payment_date <= $1::date
+     order by t.payment_date, co.name, t.position`,
+    [f.to],
+  );
+  const list: Row[] = rows.map((r) => ({
+    company: r.company,
+    day: r.day,
+    age: r.age,
+    amount: r.kind === 'payment' ? r.amount : -r.amount,
+    payer: r.payer,
+    reference: r.reference,
+    suggestion: r.rule === 'name_amount' && r.suggested ? `Förslag: ${r.suggested}` : null,
+    note: r.note,
+    file: `${r.filename}${r.source === 'auto' ? ' (automatisk)' : ''}`,
+  }));
+  return {
+    sections: [
+      {
+        title: 'Att hantera',
+        description: 'Betalningar som inte kunnat matchas mot en avi. Hantera dem under Inbetalningar: välj kund, bekräfta förslaget eller markera som hanterad.',
+        columns: withCompany(multi, [
+          { key: 'day', label: 'Betalningsdag', type: 'date' },
+          { key: 'age', label: 'Dagar', type: 'int', width: 0.6 },
+          { key: 'amount', label: 'Belopp', type: 'money' },
+          { key: 'payer', label: 'Inbetalare', type: 'text' },
+          { key: 'reference', label: 'Referens', type: 'text', width: 1.4 },
+          { key: 'suggestion', label: 'Förslag', type: 'text', width: 1.6 },
+          { key: 'note', label: 'Varför', type: 'text', width: 3 },
+          { key: 'file', label: 'Fil', type: 'text', width: 1.6 },
+        ]),
+        rows: list,
+        totals: { ...sumBy(list, ['amount']), payer: `${list.length} st` },
+        empty: 'Alla inbetalningar är matchade.',
+      },
+    ],
+    notes: ['Belopp med minustecken är uttag eller återföringar på kontot.'],
+  };
+}
+
 export const REPORTS: ReportDef[] = [
   { key: 'hyreslista', title: 'Hyreslista', description: 'Alla objekt med hyresgäst, avtal, hyra och vakanser per ett datum.', mode: 'date', build: rentRoll },
   { key: 'aviseringsjournal', title: 'Aviseringsjournal', description: 'Utfärdade avier, fakturor och krediter under perioden, med summor per artikel och konto.', mode: 'period', build: billingJournal },
@@ -866,6 +917,7 @@ export const REPORTS: ReportDef[] = [
   { key: 'moms', title: 'Momsavstämning', description: 'Utgående och ingående moms per momssats och konto, med förslag till momsdeklaration.', mode: 'period', build: vatReconciliation },
   { key: 'frivillig-skattskyldighet', title: 'Frivillig skattskyldighet', description: 'Momspliktiga lokaler, momspliktig andel per fastighet och avtal som inte stämmer med objektets momsstatus.', mode: 'date', build: voluntaryVat },
   { key: 'in-och-avflyttning', title: 'In- och avflyttningslista', description: 'Alla in- och avflyttningar under perioden med objekt, hyresgäst och hyra.', mode: 'period', build: moves },
+  { key: 'omatchade-inbetalningar', title: 'Omatchade inbetalningar', description: 'Inbetalningar från banken som inte kunnat kopplas till en avi och väntar på hantering.', mode: 'date', build: unmatchedPayments },
 ];
 
 export type { Section };

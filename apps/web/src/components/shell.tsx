@@ -33,6 +33,7 @@ const admin = [
   { href: '/kontoplan', label: 'Kontoplan', icon: <Icon d="M4 4h12v12H4zM4 8h12M4 12h12M8 4v12" /> },
   { href: '/import', label: 'Importcentral', icon: <Icon d="M10 3v9M6 8l4 4 4-4M4 14v3h12v-3" /> },
   { href: '/anvandare', label: 'Användare', icon: <Icon d="M8 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 16c0-3 3-4.5 6-4.5s6 1.5 6 4.5M14 4a2.5 2.5 0 0 1 0 5M16 11.5c1.5.5 2.5 1.8 2.5 4" /> },
+  { href: '/dataskydd', label: 'Dataskydd', icon: <Icon d="M10 3l6 2.5v4.5c0 3.5-2.5 6-6 7-3.5-1-6-3.5-6-7V5.5zM7.5 10l2 2 3.5-3.5" /> },
   { href: '/logg', label: 'Revisionslogg', icon: <Icon d="M10 4v6l4 2M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16z" /> },
 ];
 

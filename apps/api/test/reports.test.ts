@@ -66,6 +66,7 @@ describe('rapporter', () => {
       'moms',
       'frivillig-skattskyldighet',
       'in-och-avflyttning',
+      'omatchade-inbetalningar',
     ]);
     await agent.get('/reports/finns-inte').expect(404);
     await agent.get('/reports/moms?from=2027-02-30').expect(400);

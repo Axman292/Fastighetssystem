@@ -368,6 +368,8 @@ export const customer = pgTable('customer', {
   paymentTermsDays: smallint('payment_terms_days').notNull().default(30),
   notes: text('notes'),
   active: boolean('active').notNull().default(true),
+  anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
+  accountingPurgedAt: timestamp('accounting_purged_at', { withTimezone: true }),
   ...audit,
 });
 

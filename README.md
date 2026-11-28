@@ -146,6 +146,21 @@ Under **Bokföring** skapas en SIE-fil (SIE typ 4, PC8) med verifikationer för 
 - **Exporten** använder verifikationsserie E och moms 25 % på 2613 som standard.
 - Egna konton per fastighet (3100, 3300, 3401 ...) och kostnadskontona läses in från Hogia med en SIE 4-fil i importcentralen.
 
+## Dataskydd (GDPR)
+
+Under Administration → Dataskydd, per bolag.
+
+- **Anonymisering av tidigare hyresgäster.** När hyresgästen har flyttat, allt är betalt och lagringstiden gått (standard 24 månader, minst 6) tas namn, personnummer, kontaktuppgifter, adresser, anteckningar, kontaktpersoner, e-postadresser i utskicksloggen och dokument bort. Kunden ligger kvar som "Anonymiserad kund 1042" så att avtal, fakturor och bokföring hänger ihop. Företagskunder behåller namn och organisationsnummer om inget annat väljs.
+- **Hinder.** Ett gällande avtal, obetalda fakturor, en inbetalning som inte är fördelad, en deposition som inte är återbetald, en inbetalning som väntar på bokföring eller ett fakturautkast stoppar gallringen tills det är löst.
+- **Bokföringslagen.** Fakturor och betalningar är räkenskapsinformation och behåller mottagarens namn och adress i 7 år efter utgången av det kalenderår då räkenskapsåret avslutades (brutet räkenskapsår tas med). Därefter rensas även fakturornas mottagare, bankfilernas betalaruppgifter och noteringar. Belopp och bokföring ändras aldrig.
+- **Importfiler** i importcentralen rensas efter en egen lagringstid (standard 12 månader). En rensad import kan inte ångras.
+- **Revisionsloggen** maskeras för de rader som gallras (värdet blir `[gallrad]`), så att uppgifterna inte finns kvar i historiken.
+- **Förhandsgranskning** av vad som gallras nu, vad som stoppas och vilka som står på tur, och knappen **Gallra nu**.
+- **Automatisk gallring** en gång per dygn när den är påslagen (avstängd från början). Stängs av helt med `GDPR_AUTO=off`.
+- **Logg** över varje gallring, utan namn eller personnummer.
+- **Registerutdrag** (artikel 15) för en hyresgäst som PDF eller JSON från kundsidan, med ändamål, rättslig grund, lagringstider, mottagare och rättigheter. Varje utdrag loggas.
+- **Anonymisera på begäran** från kundsidan, utan att vänta på lagringstiden. Hindren och bokföringslagen gäller fortfarande.
+
 ## Struktur
 
 ```
