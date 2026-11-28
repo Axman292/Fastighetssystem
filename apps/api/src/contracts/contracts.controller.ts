@@ -78,6 +78,34 @@ const LIST_SQL = `
     and ($4::uuid is null or exists (select 1 from contract_object x where x.contract_id = k.id and x.object_id = $4))
   order by k.contract_nr desc`;
 
+/** Skapar ett avtal som utkast. Används även när en intressent blir hyresgäst. */
+export async function createContract(
+  db: Db,
+  client: PoolClient,
+  companyId: string,
+  parsed: z.output<typeof createContractSchema>,
+): Promise<ContractRow> {
+  const { objectIds, lines, indexClause, ...data } = parsed;
+  await client.query(`select pg_advisory_xact_lock(hashtext('contract_nr:' || $1))`, [companyId]);
+  const { rows } = await client.query(
+    'select coalesce(max(contract_nr), 1000) + 1 as nr from contract where company_id = $1',
+    [companyId],
+  );
+  const [row] = await db
+    .insert(contract)
+    .values({ ...data, companyId, contractNr: rows[0].nr })
+    .returning();
+  for (const objectId of new Set(objectIds)) {
+    await attachObject(db, client, row, objectId, lines === undefined, !!indexClause);
+  }
+  for (const l of lines ?? []) {
+    await insertLine(db, row, l);
+  }
+  if (indexClause) await saveIndexClause(db, client, row, indexClause);
+  await addEvent(db, row, 'created', `Avtal ${row.contractNr} upprättat som utkast`);
+  return row;
+}
+
 @Controller('contracts')
 export class ContractsController {
   @Get()
@@ -121,27 +149,8 @@ export class ContractsController {
   @Post()
   create(@Ctx() ctx: RequestContext, @Body() body: unknown) {
     const companyId = requireCompany(ctx, 'contract.write');
-    const { objectIds, lines, indexClause, ...data } = parse(createContractSchema, body);
-    return withContext(dbContext(ctx), async (db, client) => {
-      await client.query(`select pg_advisory_xact_lock(hashtext('contract_nr:' || $1))`, [companyId]);
-      const { rows } = await client.query(
-        'select coalesce(max(contract_nr), 1000) + 1 as nr from contract where company_id = $1',
-        [companyId],
-      );
-      const [row] = await db
-        .insert(contract)
-        .values({ ...data, companyId, contractNr: rows[0].nr })
-        .returning();
-      for (const objectId of new Set(objectIds)) {
-        await attachObject(db, client, row, objectId, lines === undefined, !!indexClause);
-      }
-      for (const l of lines ?? []) {
-        await insertLine(db, row, l);
-      }
-      if (indexClause) await saveIndexClause(db, client, row, indexClause);
-      await addEvent(db, row, 'created', `Avtal ${row.contractNr} upprättat som utkast`);
-      return row;
-    });
+    const parsed = parse(createContractSchema, body);
+    return withContext(dbContext(ctx), (db, client) => createContract(db, client, companyId, parsed));
   }
 
   @Get(':id')
