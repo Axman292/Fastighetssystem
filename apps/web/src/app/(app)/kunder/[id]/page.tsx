@@ -12,6 +12,7 @@ import { CONTRACT_TYPE_LABEL, DELIVERY_LABEL, contractStatus, fmtOre } from '@/l
 import { useSession } from '@/lib/session';
 import { InvoiceRow, InvoiceTable } from '@/components/invoice-table';
 import { CustomerLedger } from '@/components/customer-ledger';
+import { CustomerGdprActions } from '@/components/customer-gdpr';
 
 interface Contact {
   id: string;
@@ -33,6 +34,8 @@ interface CustomerDetail {
   deliveryMethod: string;
   paymentTermsDays: number;
   active: boolean;
+  anonymizedAt: string | null;
+  accountingPurgedAt: string | null;
   contacts: Contact[];
   contracts: {
     id: string;
@@ -91,13 +94,22 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
         description={`Kund ${c.customerNr} · ${c.kind === 'person' ? 'Privatperson' : 'Företag'}${c.nationalId ? ` · ${c.nationalId}` : ''} · ${c.companyName}`}
         actions={
           <>
-            {!c.active && <Badge>Inaktiv</Badge>}
-            {can('contract.write', c.companyId) && (
+            {c.anonymizedAt ? <Badge>Anonymiserad</Badge> : !c.active && <Badge>Inaktiv</Badge>}
+            <CustomerGdprActions customerId={c.id} companyId={c.companyId} anonymizedAt={c.anonymizedAt} onChange={load} />
+            {can('contract.write', c.companyId) && !c.anonymizedAt && (
               <Button onClick={() => router.push(`/avtal/nytt?customerId=${c.id}`)}>Nytt avtal</Button>
             )}
           </>
         }
       />
+      {c.anonymizedAt && (
+        <div className="mb-5 rounded-md bg-subtle px-3 py-2 text-[13px] text-ink-2">
+          Personuppgifterna anonymiserades {c.anonymizedAt.slice(0, 10)} enligt dataskyddsinställningarna.
+          {c.accountingPurgedAt
+            ? ' Även fakturornas mottagaruppgifter är borttagna.'
+            : ' Fakturor och betalningar behåller mottagarens namn och adress tills bokföringstiden har gått.'}
+        </div>
+      )}
       <div className="mb-8 grid grid-cols-4 gap-3">
         <Stat label="Gällande avtal" value={live.length} />
         <Stat label="Hyra per månad" value={fmtOre(monthly)} sub="exkl. moms" />
