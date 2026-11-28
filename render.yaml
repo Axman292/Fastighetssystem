@@ -47,6 +47,17 @@ services:
         sync: false
       - key: EMAIL_ALLOWLIST
         sync: false
+      # SMS till hyresgäster (Utskick). SMS_PROVIDER = brevo eller 46elks. Utan den körs SMS i testläge.
+      - key: SMS_PROVIDER
+        sync: false
+      - key: SMS_FROM
+        sync: false
+      - key: SMS_ALLOWLIST
+        sync: false
+      - key: ELKS_API_USERNAME
+        sync: false
+      - key: ELKS_API_PASSWORD
+        sync: false
       # Krypterar bankens SSH-nyckel i databasen (automatisk hämtning av inbetalningar).
       # Render skapar ett slumpvärde. Byts det måste en ny nyckel skickas till banken.
       - key: APP_SECRET_KEY
