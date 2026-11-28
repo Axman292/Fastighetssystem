@@ -31,6 +31,7 @@ import { EconomyController } from './economy/economy.controller';
 import { ArticlesController } from './articles/articles.controller';
 import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.controller';
 import { ReportsController } from './reports/reports.controller';
+import { AccountingController } from './accounting/accounting.controller';
 
 @Module({
   controllers: [
@@ -62,6 +63,7 @@ import { ReportsController } from './reports/reports.controller';
     ArticlesController,
     RentAdjustmentsController,
     ReportsController,
+    AccountingController,
   ],
   providers: [
     AuthService,
