@@ -25,7 +25,10 @@ interface ContractListRow {
 }
 
 interface AttentionItem {
+  key: string;
   kind: string;
+  label: string;
+  overdue: boolean;
   date: string;
   severity: 'high' | 'normal';
   message: string;
@@ -35,16 +38,6 @@ interface AttentionItem {
   companyName: string;
   objects: string;
 }
-
-const KIND_LABEL: Record<string, string> = {
-  notice_deadline: 'Uppsägningstid',
-  auto_extended: 'Förlängs',
-  ending: 'Upphör',
-  renegotiate: 'Omförhandling',
-  draft: 'Utkast',
-  no_lines: 'Saknar hyra',
-  deposit_missing: 'Säkerhet',
-};
 
 type Tab = 'attention' | 'all';
 
@@ -82,6 +75,9 @@ export default function ContractsPage() {
         description={active ? `Hyresavtal i ${active.companyName}.` : 'Hyresavtal i hela koncernen.'}
         actions={
           <>
+            <Link href="/avtal/bevakning">
+              <Button variant="secondary">Bevakning</Button>
+            </Link>
             <Link href="/avtal/hyresjustering">
               <Button variant="secondary">Hyresjustering</Button>
             </Link>
@@ -117,15 +113,16 @@ export default function ContractsPage() {
           <Card className="px-6 py-12 text-center">
             <div className="text-[14px] font-medium">Inget att hantera just nu</div>
             <p className="mx-auto mt-1 max-w-md text-[13px] text-ink-2">
-              Här visas sista dag för uppsägning, avtal som löper ut, omförhandlingar, utkast och säkerheter som inte kommit in.
+              Här visas sista dag för uppsägning, avtal som löper ut, omförhandlingar, KPI-uppräkningar, hyresändringar och säkerheter. Framförhållning och
+              e-postsammanfattning ställs in under Bevakning.
             </p>
           </Card>
         ) : (
           <Card className="divide-y divide-line">
-            {items?.map((i, n) => (
-              <Link key={n} href={`/avtal/${i.contractId}`} className="flex items-center gap-4 px-4 py-3 hover:bg-subtle/60">
-                <div className="w-28 shrink-0">
-                  <Badge tone={i.severity === 'high' ? 'warn' : 'neutral'}>{KIND_LABEL[i.kind] ?? i.kind}</Badge>
+            {items?.map((i) => (
+              <Link key={i.key} href={`/avtal/${i.contractId}`} className="flex items-center gap-4 px-4 py-3 hover:bg-subtle/60">
+                <div className="w-40 shrink-0">
+                  <Badge tone={i.overdue ? 'bad' : i.severity === 'high' ? 'warn' : 'neutral'}>{i.label}</Badge>
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-medium">

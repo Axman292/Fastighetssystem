@@ -37,6 +37,8 @@ import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
+import { ContractAlertsController } from './contracts/alerts.controller';
+import { ContractAlertScheduler } from './contracts/alert-digest';
 import { InterestsController, PublicInterestController, VacanciesController } from './vacancies/vacancies.controller';
 import { MessagesController } from './messages/messages.controller';
 import { DashboardController } from './dashboard/dashboard.controller';
@@ -79,6 +81,7 @@ import { DashboardController } from './dashboard/dashboard.controller';
     PaymentPlansController,
     CollectionCasesController,
     GdprController,
+    ContractAlertsController,
     VacanciesController,
     InterestsController,
     PublicInterestController,
@@ -88,6 +91,7 @@ import { DashboardController } from './dashboard/dashboard.controller';
   providers: [
     AuthService,
     GdprScheduler,
+    ContractAlertScheduler,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DbErrorsFilter },
   ],

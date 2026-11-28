@@ -9,6 +9,7 @@ import type { ObjectRow } from '@/components/object-table';
 import { Badge, Button, Card, ErrorNote, PageHeader, Stat, Table, Td, cx } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { contractTermsFields, depositFields, lineFields } from '@/lib/fields';
+import { AlertList, ContractAlert } from '@/components/contract-alerts';
 import {
   CONTRACT_TYPE_LABEL,
   DEPOSIT_LABEL,
@@ -44,6 +45,7 @@ interface Deposit {
   dueDate: string | null;
   receivedDate: string | null;
   returnedDate: string | null;
+  validUntil: string | null;
   note: string | null;
 }
 
@@ -120,6 +122,7 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [formKey, setFormKey] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
+  const [alerts, setAlerts] = useState<ContractAlert[] | null>(null);
   const [freeObjects, setFreeObjects] = useState<ObjectRow[]>([]);
   const { articles } = useArticles();
 
@@ -130,6 +133,9 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
         setFormKey((n) => n + 1);
       })
       .catch((e: ApiError) => setError(e.message));
+    api<ContractAlert[]>(`/contract-alerts/contract/${id}`)
+      .then(setAlerts)
+      .catch(() => setAlerts([]));
   }, [id]);
   useEffect(load, [load]);
 
@@ -223,6 +229,25 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
           sub={k.noticeDeadline ? `${k.noticeMonths} månaders uppsägningstid` : 'från närmaste månadsskifte'}
         />
       </div>
+
+      {alerts && alerts.length > 0 && (
+        <section className="mb-8">
+          <SectionHeader
+            title="Bevakning"
+            description="Kommande datum för avtalet de närmaste två åren."
+            actions={
+              <Link href="/avtal/bevakning">
+                <Button size="sm" variant="ghost">
+                  All bevakning
+                </Button>
+              </Link>
+            }
+          />
+          <Card>
+            <AlertList items={alerts} onChanged={load} showContract={false} />
+          </Card>
+        </section>
+      )}
 
       <div className="grid grid-cols-[3fr_2fr] gap-6">
         <section>
@@ -435,6 +460,7 @@ export default function ContractPage({ params }: { params: Promise<{ id: string 
                 <Td>
                   {DEPOSIT_LABEL[d.kind]}
                   {d.note && <div className="text-[12px] text-ink-3">{d.note}</div>}
+                  {d.validUntil && <div className="text-[12px] text-ink-3">Gäller till {d.validUntil}</div>}
                 </Td>
                 <Td className="tabular">{fmtOre(d.amountOre)}</Td>
                 <Td className="text-[12px]">
