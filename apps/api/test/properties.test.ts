@@ -18,8 +18,8 @@ beforeAll(async () => {
   agent = await login(app);
   const me = await agent.get('/auth/me').expect(200);
   const byName = (n: string) => me.body.companies.find((c: { companyName: string }) => c.companyName === n).companyId;
-  companyA = byName('HPK AB');
-  companyB = byName('Hardebergabanan AB');
+  companyA = byName('Fastighet AB Hemporten K');
+  companyB = byName('Fastighets AB Hardebergabanan');
   await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
 });
 
@@ -36,7 +36,7 @@ describe('fastigheter', () => {
     propertyId = res.body.id;
     const list = await agent.get('/properties').expect(200);
     expect(list.body).toHaveLength(1);
-    expect(list.body[0]).toMatchObject({ name: 'Kvarnen', companyName: 'HPK AB', objectCount: 0 });
+    expect(list.body[0]).toMatchObject({ name: 'Kvarnen', companyName: 'Fastighet AB Hemporten K', objectCount: 0 });
   });
 
   it('nekar dubbla fastighetsbeteckningar i samma bolag', async () => {

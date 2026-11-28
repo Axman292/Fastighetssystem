@@ -166,9 +166,9 @@ describe('rapporter', () => {
   });
 
   it('filtrerar på bolag och fastighet', async () => {
-    await agent.post('/auth/switch-company').send({ companyId: company['Hardebergabanan AB'] }).expect(200);
+    await agent.post('/auth/switch-company').send({ companyId: company['Fastighets AB Hardebergabanan'] }).expect(200);
     const r = (await agent.get('/reports/hyreslista').expect(200)).body as Report;
-    expect(r.scope).toBe('Hardebergabanan AB');
+    expect(r.scope).toBe('Fastighets AB Hardebergabanan');
     const objects = section(r, 'Objekt');
     expect(objects.columns[0].key).not.toBe('company');
     expect(new Set(objects.rows.map((x) => x.property))).toEqual(new Set(['Stationen']));

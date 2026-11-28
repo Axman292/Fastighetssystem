@@ -37,12 +37,22 @@ export const REPORT_GROUP_LABEL: Record<ReportGroup, string> = {
 export const INCOME_GROUPS: ReportGroup[] = ['rent_income', 'other_income'];
 export const OPEX_GROUPS: ReportGroup[] = ['operating', 'maintenance', 'property_tax', 'insurance', 'admin'];
 
+/**
+ * Hyreskonton enligt FastBAS (som i Hogia DinHyresvärd) och BAS:
+ * 3010–3016 hyresintäkter, 3080–3099 hyresbortfall och rabatter,
+ * 3100–3109 och 3300–3499 egna hyreskonton per fastighet, 3910–3919.
+ * Samma regel finns i databasen (app.default_rent_account).
+ */
+function isRentNumber(n: number): boolean {
+  return (n >= 3010 && n <= 3016) || (n >= 3080 && n <= 3109) || (n >= 3300 && n <= 3499) || (n >= 3910 && n <= 3919);
+}
+
 /** Grupp utifrån BAS-kontonumret. */
 export function defaultReportGroup(accountNumber: string): ReportGroup {
   const n = Number(accountNumber);
   if (!Number.isInteger(n)) return 'none';
-  if (n >= 3910 && n <= 3919) return 'rent_income';
-  if (n === 3740) return 'none';
+  if (isRentNumber(n)) return 'rent_income';
+  if (n === 3740 || (n >= 3000 && n <= 3002)) return 'none';
   if (n >= 3000 && n <= 3999) return 'other_income';
   if ((n >= 5170 && n <= 5179) || (n >= 5070 && n <= 5079)) return 'maintenance';
   if (n === 5191) return 'property_tax';
@@ -60,7 +70,7 @@ export function reportGroupOf(accountNumber: string, override?: string | null): 
 
 /**
  * Rapportgrupp för en kundfakturarad. Kontot kommer från fakturaraden eller
- * artikeln. Hyresintäktskonton (3910–3919) blir hyra, allt annat övriga intäkter.
+ * artikeln. Hyreskonton (se isRentNumber) blir hyra, allt annat övriga intäkter.
  */
 export function incomeGroupOf(accountNumber: string | null, override?: string | null): 'rent_income' | 'other_income' {
   if (!accountNumber) return 'other_income';

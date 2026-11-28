@@ -83,8 +83,8 @@ beforeAll(async () => {
   agent = await login(app);
   const me = await agent.get('/auth/me').expect(200);
   const byName = (n: string) => me.body.companies.find((c: { companyName: string }) => c.companyName === n).companyId;
-  companyA = byName('HPK AB');
-  companyB = byName('Hardebergabanan AB');
+  companyA = byName('Fastighet AB Hemporten K');
+  companyB = byName('Fastighets AB Hardebergabanan');
   await agent.patch(`/companies/${companyA}`).send({ bankgiro: '5050-1055', vatNr: 'SE559000002201', invoiceEmail: 'hyror@example.se' }).expect(200);
   await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
 

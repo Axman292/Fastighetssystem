@@ -54,7 +54,7 @@ Databasen hindrar själv att samma avtalsrad aviseras två gånger för samma da
 - **Egna artiklar per bolag** under Administration → Artiklar. Lägg till artiklar (till exempel Bredband, Kabel-TV, Fastighetsskatt), döp om dem och välj intäktskonto ur kontoplanen och standardmoms.
 - **Standardartiklarna** (Hyra, Parkering, Förråd, Värme, El, Vatten, Tjänst, Indextillägg, Rabatt, Avgift, Övrigt) används av systemet och kan döpas om men inte tas bort. Befintliga avtal och fakturor behåller sina artiklar.
 - Artiklarna används på hyresrader, extra debiteringar och manuella fakturor. När en artikel väljs fylls moms och text i. Bostäder får aldrig moms.
-- **Fakturaraden sparar intäktskontot** när den skapas, så att en senare ändring av artikelns konto inte ändrar utfärdade fakturor. Kontot styr också om intäkten räknas som hyra (3910–3919) i fastighetens resultat.
+- **Fakturaraden sparar intäktskontot** när den skapas, så att en senare ändring av artikelns konto inte ändrar utfärdade fakturor. Kontot styr också om intäkten räknas som hyra i fastighetens resultat (kontots rapportgrupp, som standard 3010–3016, 3080–3109, 3300–3499 och 3910–3919).
 - **Importcentralen** kopplar tillägg till artikeln med samma namn, annars gissas artikeln av texten (bredband, kabel-TV, fastighetsskatt ...).
 - En använd artikel kan göras inaktiv men inte tas bort.
 
@@ -126,6 +126,14 @@ Under **Bokföring** skapas en SIE-fil (SIE typ 4, PC8) med verifikationer för 
 - **Ångra** går för den senaste exporten, om filen inte gick att läsa in.
 - **Inställningar per bolag:** verifikationsserie (standard A), startdatum (det som hänt före finns redan i bokföringen), konton för bank, kundfordran, förskott, leverantörsskuld, moms och öresavrundning, och om kostnadsställe (dimension 1) och fastighet som projekt (dimension 6) ska följa med.
 - Verifikationsnumret lämnas tomt så att ekonomiprogrammet numrerar. Varje fil sparas och kan hämtas igen.
+
+## Bokföring som i Hogia DinHyresvärd
+
+- **Samma konton som i dag.** Kontoplanen har FastBAS-kontona som DinHyresvärd använder: kundfordran 1510, skulder till hyresgäster 2420, förutbetalda hyror 2971, utgående moms för uthyrning 2613, hyresintäkter 3010–3016, hyresbortfall 3080–3085, påminnelseavgift 3540, fastighetsskatt 3950 med flera.
+- **Standardartiklarna** bokförs som i DinHyresvärd: hyra, parkering, förråd och indextillägg på 3010, rabatt 3090, vatten, el och värme på 3110–3130, kabel-TV 3070, fastighetsskatt 3950, avgifter 3540 och övrigt 3690.
+- **Intäktskonto per fastighet** under Administration → Artiklar. En artikel kan bokföras på ett eget konto i en viss fastighet, och skilt för rader med och utan moms (till exempel hyra i Ugglan på 3100 utan moms och 3101 med moms). Gäller nya fakturarader.
+- **Exporten** använder verifikationsserie E och moms 25 % på 2613 som standard.
+- Egna konton per fastighet (3100, 3300, 3401 ...) och kostnadskontona läses in från Hogia med en SIE 4-fil i importcentralen.
 
 ## Struktur
 

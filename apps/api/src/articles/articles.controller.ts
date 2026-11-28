@@ -55,6 +55,21 @@ export const ARTICLE_LIST_SQL = `
   join company co on co.id = a.company_id
   left join account acc on acc.company_id = a.company_id and acc.number = a.account_number`;
 
+const articleAccountSchema = z.object({
+  article: articleCode,
+  propertyId: z.string().uuid('Välj en fastighet'),
+  vat: z.enum(['any', 'taxable', 'exempt']).default('any'),
+  accountNumber: z.string().trim().regex(/^\d{4}$/, 'Välj ett konto'),
+});
+
+const ARTICLE_ACCOUNT_SQL = `
+  select x.id, x.company_id as "companyId", x.article, ar.name as "articleName", x.property_id as "propertyId",
+         p.designation as "propertyDesignation", p.name as "propertyName", x.vat, x.account_number as "accountNumber", acc.name as "accountName"
+  from article_account x
+  join article ar on ar.company_id = x.company_id and ar.code = x.article
+  join property p on p.id = x.property_id
+  left join account acc on acc.company_id = x.company_id and acc.number = x.account_number`;
+
 /** Artikelregister per bolag. */
 @Controller('articles')
 export class ArticlesController {
@@ -66,6 +81,44 @@ export class ArticlesController {
         alwaysActive: ALWAYS_ACTIVE.includes(r.code),
       })),
     );
+  }
+
+  /** Intäktskonto per fastighet: går före artikelns konto på nya fakturarader. */
+  @Get('accounts')
+  listAccounts(@Ctx() ctx: RequestContext) {
+    return withContext(dbContext(ctx), async (_db, client) =>
+      (await client.query(`${ARTICLE_ACCOUNT_SQL} order by p.designation, ar.position, ar.name, x.vat`)).rows,
+    );
+  }
+
+  @Post('accounts')
+  createAccount(@Ctx() ctx: RequestContext, @Body() body: unknown) {
+    const companyId = requireCompany(ctx, 'article.write');
+    const data = parse(articleAccountSchema, body);
+    return withContext(dbContext(ctx), async (_db, client) => {
+      await checkAccount(client, companyId, data.accountNumber);
+      const article = (await client.query(`select 1 from article where company_id = $1 and code = $2`, [companyId, data.article])).rows[0];
+      if (!article) throw new BadRequestException('Artikeln finns inte i valt bolag');
+      const property = (await client.query(`select 1 from property where id = $1 and company_id = $2`, [data.propertyId, companyId])).rows[0];
+      if (!property) throw new BadRequestException('Fastigheten finns inte i valt bolag');
+      const { rows } = await client.query(
+        `insert into article_account (company_id, article, property_id, vat, account_number) values ($1,$2,$3,$4,$5)
+         on conflict (company_id, article, property_id, vat) do update set account_number = excluded.account_number
+         returning id`,
+        [companyId, data.article, data.propertyId, data.vat, data.accountNumber],
+      );
+      return rows[0];
+    });
+  }
+
+  @Delete('accounts/:id')
+  @HttpCode(204)
+  async removeAccount(@Ctx() ctx: RequestContext, @Param('id', ParseUUIDPipe) id: string) {
+    const companyId = requireCompany(ctx, 'article.write');
+    await withContext(dbContext(ctx), async (_db, client) => {
+      const { rowCount } = await client.query(`delete from article_account where id = $1 and company_id = $2`, [id, companyId]);
+      if (!rowCount) throw new NotFoundException('Kontot finns inte i valt bolag');
+    });
   }
 
   @Post()

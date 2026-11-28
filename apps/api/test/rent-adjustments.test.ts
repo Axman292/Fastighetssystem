@@ -35,8 +35,8 @@ beforeAll(async () => {
   agent = await login(app);
   const me = await agent.get('/auth/me').expect(200);
   const byName = (n: string) => me.body.companies.find((c: { companyName: string }) => c.companyName === n).companyId;
-  companyA = byName('HPK AB');
-  companyB = byName('Hardebergabanan AB');
+  companyA = byName('Fastighet AB Hemporten K');
+  companyB = byName('Fastighets AB Hardebergabanan');
   await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
 
   propA = (await agent.post('/properties').send({ name: 'Kornet', designation: 'Malmö Kornet 6', category: 'mixed' }).expect(201)).body.id;

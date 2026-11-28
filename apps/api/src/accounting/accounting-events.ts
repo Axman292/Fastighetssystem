@@ -58,14 +58,14 @@ export interface AccountingSettings {
 }
 
 export const DEFAULT_SETTINGS: AccountingSettings = {
-  series: 'A',
+  series: 'E',
   startDate: null,
   bankAccount: '1930',
   receivableAccount: '1510',
   prepaymentAccount: '2420',
   payableAccount: '2440',
   inputVatAccount: '2640',
-  outputVat25Account: '2610',
+  outputVat25Account: '2613',
   outputVat12Account: '2620',
   outputVat6Account: '2630',
   roundingAccount: '3740',

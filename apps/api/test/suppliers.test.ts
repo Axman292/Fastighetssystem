@@ -21,6 +21,11 @@ describe('utan databas', () => {
 
   it('lägger konton i rätt rapportgrupp', () => {
     expect(defaultReportGroup('3911')).toBe('rent_income');
+    expect(defaultReportGroup('3010')).toBe('rent_income');
+    expect(defaultReportGroup('3100')).toBe('rent_income');
+    expect(defaultReportGroup('3110')).toBe('other_income');
+    expect(defaultReportGroup('3540')).toBe('other_income');
+    expect(defaultReportGroup('3001')).toBe('none');
     expect(defaultReportGroup('5130')).toBe('operating');
     expect(defaultReportGroup('5170')).toBe('maintenance');
     expect(defaultReportGroup('5191')).toBe('property_tax');
@@ -59,8 +64,8 @@ beforeAll(async () => {
   await db.connect();
   agent = await login(app);
   const me = await agent.get('/auth/me').expect(200);
-  companyA = me.body.companies.find((c: { companyName: string }) => c.companyName === 'HPK AB').companyId;
-  companyB = me.body.companies.find((c: { companyName: string }) => c.companyName === 'Hardebergabanan AB').companyId;
+  companyA = me.body.companies.find((c: { companyName: string }) => c.companyName === 'Fastighet AB Hemporten K').companyId;
+  companyB = me.body.companies.find((c: { companyName: string }) => c.companyName === 'Fastighets AB Hardebergabanan').companyId;
   await agent.patch(`/companies/${companyA}`).send({ bankgiro: '5050-1055', invoiceEmail: 'hyror@example.se' }).expect(200);
   await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
 
@@ -95,7 +100,7 @@ describe('kontoplan och leverantörer', () => {
     const numbers = r.body.map((a: { number: string }) => a.number);
     expect(numbers).toEqual(expect.arrayContaining(['2440', '2640', '5130', '5170', '5191', '8410']));
     expect(r.body.find((a: { number: string }) => a.number === '5170').reportGroup).toBe('maintenance');
-    const n = await db.query(`select count(*)::int as n from account a join company c on c.id = a.company_id where c.name = 'Hardebergabanan AB'`);
+    const n = await db.query(`select count(*)::int as n from account a join company c on c.id = a.company_id where c.name = 'Fastighets AB Hardebergabanan'`);
     expect(n.rows[0].n).toBeGreaterThan(20);
   });
 
@@ -319,7 +324,7 @@ describe('ekonomisk uppföljning', () => {
     await agent.post('/auth/switch-company').send({ companyId: 'all' }).expect(200);
     const r = await agent.get(`/economy/overview?${jan}`).expect(200);
     expect(r.body.properties).toHaveLength(2);
-    const hpk = r.body.companies.find((c: { companyName: string }) => c.companyName === 'HPK AB');
+    const hpk = r.body.companies.find((c: { companyName: string }) => c.companyName === 'Fastighet AB Hemporten K');
     expect(hpk.propertyCount).toBe(2);
     expect(hpk.kpi.incomeOre).toBe(1_000_000);
     expect(r.body.total.kpi.netOperatingOre).toBe(hpk.kpi.netOperatingOre);

@@ -15,8 +15,8 @@ beforeAll(async () => {
   agent = await login(app);
   const me = await agent.get('/auth/me').expect(200);
   const byName = (n: string) => me.body.companies.find((c: { companyName: string }) => c.companyName === n).companyId;
-  companyA = byName('HPK AB');
-  companyB = byName('Hardebergabanan AB');
+  companyA = byName('Fastighet AB Hemporten K');
+  companyB = byName('Fastighets AB Hardebergabanan');
   await agent.post('/auth/switch-company').send({ companyId: companyA }).expect(200);
 });
 
@@ -51,8 +51,8 @@ describe('artikelregister', () => {
     const own = all.filter((a: { companyId: string }) => a.companyId === companyA);
     expect(all.every((a: { companyId: string }) => a.companyId === companyA)).toBe(true);
     const by = (c: string) => own.find((a: { code: string }) => a.code === c);
-    expect(by('rent')).toMatchObject({ name: 'Hyra', accountNumber: '3911', system: true, alwaysActive: true });
-    expect(by('broadband')).toMatchObject({ name: 'Bredband', accountNumber: '3990', system: false });
+    expect(by('rent')).toMatchObject({ name: 'Hyra', accountNumber: '3010', system: true, alwaysActive: true });
+    expect(by('broadband')).toMatchObject({ name: 'Bredband', accountNumber: '3690', system: false });
     expect(by('property_tax')).toMatchObject({ name: 'Fastighetsskatt' });
     expect(by('fee')).toMatchObject({ vatRateBp: 0 });
   });
@@ -99,6 +99,42 @@ describe('artikelregister', () => {
     // Oanvänd artikel kan tas bort
     const tmp = (await agent.post('/articles').send({ name: 'Tillfällig', accountNumber: '3990' }).expect(201)).body;
     await agent.delete(`/articles/${tmp.id}`).expect(204);
+  });
+
+  it('bokför på fastighetens eget konto, skilt för momspliktiga och momsfria rader', async () => {
+    const p = (await agent.post('/properties').send({ name: 'Ugglan', designation: 'Malmö Ugglan 11', category: 'mixed' }).expect(201)).body;
+    const q = (await agent.post('/properties').send({ name: 'Hjärpen', designation: 'Malmö Hjärpen 9', category: 'residential' }).expect(201)).body;
+    // Kontona finns inte i standardplanen; de kommer från Hogia
+    for (const [number, name] of [['3100', 'Hyresint Ugglan ej momspl'], ['3101', 'Hyresint Ugglan momspl']]) {
+      await agent.post('/accounts').send({ number, name, type: 'revenue' }).expect(201);
+    }
+    const accounts = (await agent.get('/accounts').expect(200)).body.filter((a: { companyId: string }) => a.companyId === companyA);
+    await agent.post('/articles/accounts').send({ article: 'rent', propertyId: p.id, vat: 'exempt', accountNumber: '3100' }).expect(201);
+    await agent.post('/articles/accounts').send({ article: 'rent', propertyId: p.id, vat: 'taxable', accountNumber: '3101' }).expect(201);
+    await agent.post('/articles/accounts').send({ article: 'rent', propertyId: p.id, accountNumber: '5130' }).expect(400);
+    const rules = (await agent.get('/articles/accounts').expect(200)).body;
+    expect(rules).toHaveLength(2);
+    expect(rules[0]).toMatchObject({ propertyDesignation: 'Malmö Ugglan 11', articleName: 'Grundhyra' });
+
+    const c = await agent.post('/customers').send({ kind: 'organization', name: 'Hyresgästen AB', email: 'h@example.se' }).expect(201);
+    const inv = (
+      await agent
+        .post('/invoices')
+        .send({
+          customerId: c.body.id,
+          invoiceDate: '2027-02-01',
+          lines: [
+            { article: 'rent', description: 'Lokal', quantity: 1, unitPrice: 1000, vatRateBp: 2500, propertyId: p.id },
+            { article: 'rent', description: 'Bostad', quantity: 1, unitPrice: 1000, vatRateBp: 0, propertyId: p.id },
+            { article: 'rent', description: 'Annan fastighet', quantity: 1, unitPrice: 1000, vatRateBp: 0, propertyId: q.id },
+          ],
+        })
+        .expect(201)
+    ).body;
+    expect(inv.lines.map((l: { accountNumber: string }) => l.accountNumber)).toEqual(['3101', '3100', '3010']);
+
+    for (const r of rules) await agent.delete(`/articles/accounts/${r.id}`).expect(204);
+    expect((await agent.get('/articles/accounts').expect(200)).body).toHaveLength(0);
   });
 
   it('artiklar i ett bolag syns inte i ett annat', async () => {

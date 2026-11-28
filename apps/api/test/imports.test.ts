@@ -226,13 +226,14 @@ describe('importcentral, andra format', () => {
     const v = (await agent.post(`/imports/${b}/validate`).expect(200)).body;
     // Bolaget har redan BAS-standardkonton (fas 6). Två av kontona i filen finns och kopplas, tre är nya.
     expect(v.perEntity.account.total).toBe(5);
-    expect(v.perEntity.account.new).toBe(3);
+    // 1930, 1510, 3010 och 3011 finns redan i bolagets kontoplan (FastBAS)
+    expect(v.perEntity.account.new).toBe(1);
     expect(v.perEntity.voucher.new).toBe(2);
     const acc = await rows(b, 'account');
     expect(acc.map((a) => a.label)).toContain('1930 Företagskonto');
     await agent.post(`/imports/${b}/test`).expect(200);
     const c = (await agent.post(`/imports/${b}/commit`).expect(200)).body;
-    expect(c.result.created).toMatchObject({ account: 3, voucher: 2 });
+    expect(c.result.created).toMatchObject({ account: 1, voucher: 2 });
   });
 
   it('läser hyresgäster från CSV i Windows-1252 med semikolon', async () => {
