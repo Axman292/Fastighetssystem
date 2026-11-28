@@ -181,6 +181,8 @@ export interface Plan {
   upcoming: { id: string; customerNr: number; name: string; purgeDate: string }[];
   imports: { id: string; batchNr: number; name: string; status: string; lastDate: string; action: 'purge' | 'delete' }[];
   unmatchedBankTransactions: number;
+  /** Avslutade ärenden (felanmälningar) utan kopplad hyresgäst vars anmälaruppgifter ska rensas. */
+  workOrders: number;
 }
 
 /**
@@ -197,7 +199,7 @@ export async function plan(
   const today = todayIso();
   const fiscalStart = (await client.query('select fiscal_year_start from company where id = $1', [companyId])).rows[0]?.fiscal_year_start ?? 1;
   const rows = (await client.query(CANDIDATES_SQL, [companyId, opts.customerId ?? null])).rows as CandidateRow[];
-  const p: Plan = { today, settings, anonymize: [], accounting: [], blocked: [], upcoming: [], imports: [], unmatchedBankTransactions: 0 };
+  const p: Plan = { today, settings, anonymize: [], accounting: [], blocked: [], upcoming: [], imports: [], unmatchedBankTransactions: 0, workOrders: 0 };
 
   for (const r of rows) {
     const fullMode = r.kind === 'person' || settings.includeOrganizations;
@@ -258,6 +260,7 @@ export async function plan(
         [companyId, unmatchedCutoff(today, settings.bookkeepingYears)],
       )
     ).rows[0].n;
+    p.workOrders = (await client.query(`select count(*)::int as n from (${WORK_ORDERS_DUE_SQL}) x`, [companyId, settings.retentionMonths])).rows[0].n;
   }
   return p;
 }
@@ -265,6 +268,43 @@ export async function plan(
 /** Betalningar utan kund: rensas när även det senaste möjliga räkenskapsåret har passerat. */
 function unmatchedCutoff(today: string, years: number): string {
   return `${Number(today.slice(0, 4)) - years - 1}-01-01`;
+}
+
+/**
+ * Ärenden där anmälarens uppgifter ska gallras: avslutade eller makulerade sedan
+ * lagringstiden och inte kopplade till en hyresgäst (de gallras med hyresgästen).
+ */
+const WORK_ORDERS_DUE_SQL = `
+  select id from work_order
+  where company_id = $1 and anonymized_at is null and customer_id is null
+    and status in ('closed', 'cancelled')
+    and coalesce(closed_at, updated_at) < now() - make_interval(months => $2)
+    and (reporter_name is not null or reporter_email is not null or reporter_phone is not null or access_note is not null or reporter_ip is not null)`;
+
+const WORK_ORDER_KEYS = ['reporter_name', 'reporter_email', 'reporter_phone', 'access_note', 'reporter_ip'];
+
+/** Tar bort anmälarens namn, e-post, telefon, tillträdesanteckning och IP-adress, och anmälarens egna meddelanden. */
+async function purgeWorkOrders(client: PoolClient, companyId: string, workOrderIds: string[]): Promise<{ workOrders: number; messages: number; auditRows: number }> {
+  if (!workOrderIds.length) return { workOrders: 0, messages: 0, auditRows: 0 };
+  await client.query(
+    `update work_order set reporter_name = null, reporter_email = null, reporter_phone = null, access_note = null, reporter_ip = null,
+       notify_reporter = false, anonymized_at = now() where id = any($1::uuid[])`,
+    [workOrderIds],
+  );
+  const eventIds = await ids(
+    client,
+    `select id from work_order_event where work_order_id = any($1::uuid[]) and (kind = 'reporter_comment' or author_label is not null or kind = 'email')`,
+    [workOrderIds],
+  );
+  await client.query(
+    `update work_order_event set author_label = null,
+       body = case when kind in ('reporter_comment', 'email') then '[gallrad]' else body end
+     where id = any($1::uuid[])`,
+    [eventIds],
+  );
+  let audit = await scrub(client, companyId, 'work_order', workOrderIds, WORK_ORDER_KEYS);
+  audit += await scrub(client, companyId, 'work_order_event', eventIds, ['body', 'author_label']);
+  return { workOrders: workOrderIds.length, messages: eventIds.length, auditRows: audit };
 }
 
 export function label(customerNr: number): string {
@@ -354,6 +394,11 @@ async function anonymizeCustomer(client: PoolClient, companyId: string, c: Plan[
   await client.query('delete from document where id = any($1::uuid[])', [docIds]);
   d.documents = docIds.length;
 
+  // Felanmälningar som hyresgästen gjort
+  const workOrderIds = full ? await ids(client, 'select id from work_order where customer_id = $1 and anonymized_at is null', [c.id]) : [];
+  const wo = await purgeWorkOrders(client, companyId, workOrderIds);
+  d.workOrders = wo.workOrders;
+
   // Historiken i revisionsloggen och i importens ångra-logg
   const customerKeys = full ? CUSTOMER_KEYS : ['invoice_reference', 'notes'];
   let audit = 0;
@@ -365,7 +410,7 @@ async function anonymizeCustomer(client: PoolClient, companyId: string, c: Plan[
   audit += await scrub(client, companyId, 'reminder', reminderIds, ['bill_to', 'recipient']);
   audit += await scrub(client, companyId, 'invoice_delivery', deliveryIds, ['recipient']);
   audit += await scrub(client, companyId, 'document', docIds, ['file_name', 'description']);
-  d.auditRows = audit;
+  d.auditRows = audit + wo.auditRows;
   return { kind: 'anonymize', customerId: c.id, customerNr: c.customerNr, details: { mode: c.mode, ...d } };
 }
 
@@ -482,6 +527,12 @@ export async function run(
     await scrub(client, companyId, 'bank_transaction', txIds, ['payer_name', 'payer_address', 'payer_org_nr', 'information', 'extra_references']);
     bankTransactions = txIds.length;
     log.push({ kind: 'accounting', details: { unmatchedBankTransactions: bankTransactions } });
+  }
+
+  if (!opts.customerId && p.workOrders) {
+    const woIds = await ids(client, WORK_ORDERS_DUE_SQL, [companyId, p.settings.retentionMonths]);
+    const wo = await purgeWorkOrders(client, companyId, woIds);
+    log.push({ kind: 'anonymize', details: { workOrdersWithoutCustomer: wo.workOrders, messages: wo.messages, auditRows: wo.auditRows } });
   }
 
   if (trigger === 'auto') {

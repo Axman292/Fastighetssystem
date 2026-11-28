@@ -24,6 +24,7 @@ interface Preview {
   upcoming: { id: string; customerNr: number; name: string; purgeDate: string }[];
   imports: { id: string; batchNr: number; name: string; status: string; lastDate: string; action: 'purge' | 'delete' }[];
   unmatchedBankTransactions: number;
+  workOrders?: number;
 }
 
 interface LogItem {
@@ -85,7 +86,7 @@ export default function GdprPage() {
   if (error) return <ErrorNote message={error} />;
   if (!preview) return null;
 
-  const total = preview.anonymize.length + preview.accounting.length + preview.imports.length + (preview.unmatchedBankTransactions ? 1 : 0);
+  const total = preview.anonymize.length + preview.accounting.length + preview.imports.length + (preview.unmatchedBankTransactions ? 1 : 0) + (preview.workOrders ? 1 : 0);
 
   return (
     <>
@@ -253,6 +254,11 @@ function NowTab({ p }: { p: Preview }) {
             Dessutom rensas betalaruppgifter på {p.unmatchedBankTransactions} gamla inbetalningar som aldrig kopplades till någon kund.
           </p>
         )}
+        {(p.workOrders ?? 0) > 0 && (
+          <p className="mt-2 text-[13px] text-ink-2">
+            Anmälarens namn, e-post och telefon tas bort på {p.workOrders} avslutade felanmälningar som inte är kopplade till någon hyresgäst.
+          </p>
+        )}
       </section>
 
       <section>
@@ -414,6 +420,7 @@ function LogTab({ log }: { log: Log | null }) {
 function describe(i: LogItem): string {
   const d = i.details as Record<string, number | string>;
   if (i.kind === 'import') return `import ${d.batchNr}: ${d.action === 'deleted' ? 'borttagen' : `${d.files} filer och ${d.rows} rader rensade`}`;
+  if (i.kind === 'anonymize' && !i.customerNr && d.workOrdersWithoutCustomer) return `anmälaruppgifter på ${d.workOrdersWithoutCustomer} felanmälningar utan kund`;
   if (i.kind === 'accounting' && !i.customerNr) return `betalaruppgifter på ${d.unmatchedBankTransactions} inbetalningar utan kund`;
   const parts = Object.entries(d)
     .filter(([k, v]) => k !== 'mode' && typeof v === 'number' && v > 0)
@@ -422,6 +429,7 @@ function describe(i: LogItem): string {
 }
 
 const PART: Record<string, string> = {
+  workOrders: 'felanmälningar',
   contacts: 'kontaktpersoner',
   contractNotes: 'avtalsanteckningar',
   reminders: 'påminnelser',

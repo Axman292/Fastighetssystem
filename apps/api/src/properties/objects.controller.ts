@@ -58,7 +58,8 @@ const BLOCKERS_SQL = `
            then 'Ingår i ett hyresavtal' end,
       case when exists (select 1 from invoice_line x where x.object_id = o.id) then 'Finns på fakturor' end,
       case when exists (select 1 from supplier_invoice_line x where x.object_id = o.id) then 'Har kostnader från leverantörsfakturor' end,
-      case when exists (select 1 from document x where x.entity_type = 'rental_object' and x.entity_id = o.id) then 'Har dokument' end
+      case when exists (select 1 from document x where x.entity_type = 'rental_object' and x.entity_id = o.id) then 'Har dokument' end,
+      case when exists (select 1 from work_order x where x.object_id = o.id) then 'Har felanmälningar och ärenden' end
     ], null) as reasons
   from rental_object o
   where o.id = any($1::uuid[])`;
