@@ -14,6 +14,7 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/fastigheter', label: 'Fastigheter', icon: <Icon d="M3 17h14M5 17V8l5-3 5 3v9" /> },
   { href: '/objekt', label: 'Objekt', icon: <Icon d="M4 4h5v5H4zM11 4h5v5h-5zM4 11h5v5H4zM11 11h5v5h-5z" /> },
   { href: '/kunder', label: 'Hyresgäster', icon: <Icon d="M10 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 17c0-3 3-5 6-5s6 2 6 5" /> },
+  { href: '/utskick', label: 'Utskick', icon: <Icon d="M3 9.5 16.5 4 13 17l-3.5-5.5zM9.5 11.5 16.5 4" /> },
   { href: '/avtal', label: 'Avtal', icon: <Icon d="M6 3h6l3 3v11H6zM9 9h4M9 12h4" /> },
   { href: '/avtal/bevakning', label: 'Avtalsbevakning', icon: <Icon d="M4 5h12v11H4zM4 8.5h12M7.5 3v3.5M12.5 3v3.5M7 12l2 1.5 3.5-3" /> },
   { href: '/avisering', label: 'Avisering', icon: <Icon d="M4 6h12v9H4zM4 6l6 5 6-5" /> },

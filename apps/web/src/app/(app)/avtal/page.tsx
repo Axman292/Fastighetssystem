@@ -7,6 +7,7 @@ import { Badge, Button, Card, Input, PageHeader, Select, Stat, Table, Tabs, Td }
 import { api } from '@/lib/api';
 import { CONTRACT_TYPE_LABEL, contractStatus, fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { useUrlTab } from '@/lib/url-tab';
 
 interface ContractListRow {
   id: string;
@@ -44,6 +45,7 @@ export default function ContractsPage() {
   const { active, can, version } = useSession();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('attention');
+  useUrlTab(setTab, ['attention', 'all']);
   const [rows, setRows] = useState<ContractListRow[] | null>(null);
   const [items, setItems] = useState<AttentionItem[] | null>(null);
   const [q, setQ] = useState('');

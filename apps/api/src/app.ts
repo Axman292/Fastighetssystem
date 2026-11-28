@@ -39,6 +39,8 @@ import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
 import { ContractAlertsController } from './contracts/alerts.controller';
 import { ContractAlertScheduler } from './contracts/alert-digest';
+import { MessagesController } from './messages/messages.controller';
+import { DashboardController } from './dashboard/dashboard.controller';
 
 @Module({
   controllers: [
@@ -79,6 +81,8 @@ import { ContractAlertScheduler } from './contracts/alert-digest';
     CollectionCasesController,
     GdprController,
     ContractAlertsController,
+    MessagesController,
+    DashboardController,
   ],
   providers: [
     AuthService,

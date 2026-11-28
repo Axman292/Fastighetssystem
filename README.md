@@ -179,6 +179,24 @@ Påminnelserna räknas fram ur avtalen vid varje visning, så de stämmer alltid
 - **Kalender** per månad med alla avtalsdatum, och en kalenderfil (.ics) för Outlook, Google Kalender eller iPhone med de kommande tolv månaderna.
 - **På avtalssidan** visas avtalets kommande datum de närmaste två åren.
 - **Inställningar per bolag**: framförhållning i dagar per typ (standard 120 dagar för uppsägning och omförhandling, 90 för avtalsslut, 60 för KPI och säkerheter, 30 för hyresändringar) och **sammanfattning per e-post** varje dag eller en gång i veckan till valda användare, tidigast kl. 7. Den som är mottagare i flera bolag får ett samlat mejl, och inget skickas när det inte finns något att hantera. Kan också skickas direkt för att prova. Automatiskt utskick stängs av med `CONTRACT_ALERTS_AUTO=off`.
+## Utskick till hyresgäster
+
+- **E-post och SMS** till alla hyresgäster eller ett urval under *Utskick*: nuvarande, uppsagda, kommande eller tidigare hyresgäster, fastigheter, objekttyper och avtalstyper. Kontaktpersoner kan tas med.
+- **Mallar.** Färdiga mallar (vattenavstängning, planerat underhåll, tillträde till lägenhet, allmän information) och bolagets egna mallar.
+- **Kopplingsfält** som `{namn}`, `{förnamn}`, `{fastighet}`, `{adress}`, `{objekt}`, `{lägenhet}`, `{avtal}`, `{kundnummer}`, `{bolag}` och `{datum}` fylls i för varje hyresgäst. Okända fält stoppar utskicket.
+- **Förhandsgranskning** av texten för varje hyresgäst, vem som saknar e-post eller mobilnummer, antal SMS-delar, bortval av enskilda hyresgäster och provutskick till sig själv.
+- **Logg.** Varje mottagare och kanal sparas med den text som skickades och hur det gick. Loggen syns på utskicket och på hyresgästen. Misslyckade kan skickas igen. Stora utskick skickas i bakgrunden.
+- **SMS** via Brevo (`SMS_PROVIDER=brevo`, samma `BREVO_API_KEY` som e-posten, SMS-krediter köps i Brevo) eller 46elks (`SMS_PROVIDER=46elks`, `ELKS_API_USERNAME`, `ELKS_API_PASSWORD`). Avsändarnamn `SMS_FROM` (högst 11 tecken), annars bolagets namn. Utan leverantör körs testläge. I testmiljön (`EMAIL_ALLOWLIST_ONLY=true` eller `SMS_ALLOWLIST_ONLY=true`) får bara numren i `SMS_ALLOWLIST` SMS.
+- Rättigheten `message.send` har koncernadministratör, ekonomiansvarig och förvaltare. Loggen tas bort när hyresgästen anonymiseras.
+
+## Startsida med nyckeltal
+
+- **Översikt** visar valt bolag eller hela koncernen: uthyrningsgrad (på hyresvärde och antal objekt), avtalad hyra per månad, obetalt och förfallet, inbetalt denna månad mot det som förfaller i månaden, lediga objekt, omatchade inbetalningar och avtal att hantera.
+- **Diagram** över fakturerat och inbetalt per månad det senaste året och obetalt efter ålder.
+- **Avtal** som slutar inom 90 dagar, uppsägningar som kommit in de senaste 30 dagarna och bevakningslistan för avtal.
+- **Uthyrning per fastighet** och, i koncernvyn, en tabell per bolag.
+- Varje tal länkar till listan det är räknat ur. Talen kommer från `GET /dashboard` (`apps/api/src/dashboard`).
+- **Andra moduler kan lägga till egna kort**, till exempel öppna felanmälningar, med `registerDashboardExtra` i `apps/api/src/dashboard/extras.ts`.
 
 ## Struktur
 
