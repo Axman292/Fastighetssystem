@@ -7,6 +7,7 @@ import { Button, Input, PageHeader, Stat, Tabs } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtOre } from '@/lib/format';
 import { useSession } from '@/lib/session';
+import { useUrlTab } from '@/lib/url-tab';
 
 interface Summary {
   openOre: number;
@@ -23,6 +24,7 @@ type Tab = 'all' | 'open' | 'overdue' | 'draft' | 'credit_note';
 export default function InvoicesPage() {
   const { active, can, version } = useSession();
   const [tab, setTab] = useState<Tab>('all');
+  useUrlTab(setTab, ['all', 'open', 'overdue', 'draft', 'credit_note']);
   const [q, setQ] = useState('');
   const [rows, setRows] = useState<InvoiceRow[] | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);

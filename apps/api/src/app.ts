@@ -39,6 +39,7 @@ import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
 import { WorkOrdersController } from './work-orders/work-orders.controller';
 import { PublicWorkOrdersController } from './work-orders/public.controller';
+import { DashboardController } from './dashboard/dashboard.controller';
 
 @Module({
   controllers: [
@@ -80,6 +81,7 @@ import { PublicWorkOrdersController } from './work-orders/public.controller';
     GdprController,
     WorkOrdersController,
     PublicWorkOrdersController,
+    DashboardController,
   ],
   providers: [
     AuthService,

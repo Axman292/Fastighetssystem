@@ -26,6 +26,7 @@ import { parse } from '../common/validation';
 import { withContext } from '../db/db';
 import { Ctx, dbContext, RequestContext, requireCompany } from '../auth/request-context';
 import { appUrl } from '../auth/security';
+import { registerDashboardExtra } from '../dashboard/extras';
 import {
   addEvent,
   CATEGORY,
@@ -52,6 +53,29 @@ import {
 } from './work-orders';
 
 const PERMISSION = 'work_order.manage';
+
+// Kortet "Öppna felanmälningar" på startsidan
+registerDashboardExtra(async (client) => {
+  const r = (
+    await client.query(
+      `select count(*)::int as open,
+              count(*) filter (where priority = 'urgent')::int as urgent,
+              count(*) filter (where status = 'new')::int as "new",
+              count(*) filter (where due_date < current_date)::int as late
+       from work_order where status = any($1::text[])`,
+      [OPEN_STATUSES],
+    )
+  ).rows[0] as { open: number; urgent: number; new: number; late: number };
+  const sub = [r.urgent ? `${r.urgent} akuta` : null, r.new ? `${r.new} nya` : null, r.late ? `${r.late} försenade` : null].filter(Boolean).join(', ');
+  return {
+    key: 'fault-reports',
+    label: 'Öppna felanmälningar',
+    value: String(r.open),
+    sub: sub || (r.open ? 'inga brådskande' : 'allt är åtgärdat'),
+    href: '/arenden',
+    tone: r.urgent || r.late ? 'bad' : r.new ? 'warn' : 'neutral',
+  };
+});
 
 const optText = (max: number) =>
   z

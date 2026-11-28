@@ -207,6 +207,9 @@ describe('handläggning', () => {
     expect(list[0].priority).toBe('urgent');
     const sum = (await agent.get('/work-orders/summary').expect(200)).body;
     expect(sum).toMatchObject({ new: 2, open: 2, urgent: 1 });
+    // Kortet på startsidan
+    const dash = (await agent.get('/dashboard').expect(200)).body;
+    expect(dash.extras.find((e: { key: string }) => e.key === 'fault-reports')).toMatchObject({ value: '2', href: '/arenden', tone: 'bad' });
   });
 
   it('ändrar prioritet och hantverkare och loggar det', async () => {
