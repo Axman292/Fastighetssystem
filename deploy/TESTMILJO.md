@@ -66,6 +66,19 @@ Renders gratisnivå spärrar SMTP-portarna, så e-post skickas via Brevos HTTP-A
 `EMAIL_ALLOWLIST_ONLY=true` står i `render.yaml`: mejl till andra adresser skickas inte utan sparas i
 testläge, och fakturan visar varför under *Utskick*. Utan `BREVO_API_KEY` körs allt i testläge.
 
+### SMS till hyresgäster (frivilligt)
+
+Utan de här nycklarna sparas SMS i loggen under *Utskick* men skickas inte.
+
+| Nyckel | Värde |
+| --- | --- |
+| `SMS_PROVIDER` | `brevo` (samma Brevo-konto och nyckel som e-posten, köp SMS-krediter i Brevo) eller `46elks`. |
+| `SMS_FROM` | Avsändarnamnet som syns i telefonen, högst 11 bokstäver och siffror, till exempel `Dahlqvist`. |
+| `SMS_ALLOWLIST` | Mobilnummer som får SMS i testmiljön, kommaseparerade, till exempel `0701234567`. |
+| `ELKS_API_USERNAME`, `ELKS_API_PASSWORD` | Bara för 46elks: API-användarnamn och lösenord från 46elks.se. |
+
+Eftersom `EMAIL_ALLOWLIST_ONLY=true` gäller spärren även SMS: bara numren i `SMS_ALLOWLIST` får något.
+
 ## Inloggning och användare
 
 - Under **Användare** bjuder du in nya användare med e-post. De får en länk och väljer själva sitt

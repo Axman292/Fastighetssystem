@@ -13,6 +13,7 @@ import { useSession } from '@/lib/session';
 import { InvoiceRow, InvoiceTable } from '@/components/invoice-table';
 import { CustomerLedger } from '@/components/customer-ledger';
 import { CustomerGdprActions } from '@/components/customer-gdpr';
+import { CustomerMessages } from '@/components/customer-messages';
 
 interface Contact {
   id: string;
@@ -163,6 +164,8 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
       </section>
 
       <CustomerLedger customerId={id} companyId={c.companyId} onChange={loadInvoices} />
+
+      <CustomerMessages customerId={id} />
 
       <div className="grid grid-cols-[3fr_2fr] gap-6">
         <section>

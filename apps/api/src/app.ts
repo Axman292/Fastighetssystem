@@ -37,6 +37,8 @@ import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
+import { MessagesController } from './messages/messages.controller';
+import { DashboardController } from './dashboard/dashboard.controller';
 import { AutogiroController } from './autogiro/autogiro.controller';
 
 @Module({
@@ -77,6 +79,8 @@ import { AutogiroController } from './autogiro/autogiro.controller';
     PaymentPlansController,
     CollectionCasesController,
     GdprController,
+    MessagesController,
+    DashboardController,
     AutogiroController,
   ],
   providers: [
