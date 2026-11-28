@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0017 Avtalsbevakning: påminnelser om avtal.
+-- 0019 Avtalsbevakning: påminnelser om avtal.
 --
 -- Påminnelserna räknas fram ur avtalens datum vid varje anrop
 -- (uppsägningstid, avtalsslut, omförhandling, KPI-uppräkning,
