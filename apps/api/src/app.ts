@@ -37,6 +37,7 @@ import { AccountingController } from './accounting/accounting.controller';
 import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 import { GdprController } from './gdpr/gdpr.controller';
 import { GdprScheduler } from './gdpr/gdpr-scheduler';
+import { MessagesController } from './messages/messages.controller';
 
 @Module({
   controllers: [
@@ -76,6 +77,7 @@ import { GdprScheduler } from './gdpr/gdpr-scheduler';
     PaymentPlansController,
     CollectionCasesController,
     GdprController,
+    MessagesController,
   ],
   providers: [
     AuthService,
