@@ -32,6 +32,7 @@ import { ArticlesController } from './articles/articles.controller';
 import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.controller';
 import { ReportsController } from './reports/reports.controller';
 import { AccountingController } from './accounting/accounting.controller';
+import { CollectionCasesController, LateInterestController, PaymentPlansController, ReferenceRatesController } from './collection/collection.controller';
 
 @Module({
   controllers: [
@@ -64,6 +65,10 @@ import { AccountingController } from './accounting/accounting.controller';
     RentAdjustmentsController,
     ReportsController,
     AccountingController,
+    LateInterestController,
+    ReferenceRatesController,
+    PaymentPlansController,
+    CollectionCasesController,
   ],
   providers: [
     AuthService,

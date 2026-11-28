@@ -70,6 +70,12 @@ export interface Company {
   reminderGraceDays: number;
   reminderDueDays: number;
   lateInterestBp: number;
+  lateInterestReference: boolean;
+  lateInterestMarginBp: number;
+  lateInterestMinOre: number;
+  lateInterestMethod: 'next_notice' | 'invoice';
+  lateInterestFrom: string;
+  badDebtAccount: string;
 }
 
 export interface BankAccount {

@@ -6,7 +6,7 @@ import type { ReminderDetail } from './reminders';
 
 const KIND: Record<string, string> = { rent_notice: 'Hyresavi', invoice: 'Faktura', credit_note: 'Kreditfaktura' };
 
-function pdf(title: string, draw: (doc: Doc) => { company: CompanyInfo }[]): Promise<Buffer> {
+export function pdf(title: string, draw: (doc: Doc) => { company: CompanyInfo }[]): Promise<Buffer> {
   const doc = new PDFDocument({ size: 'A4', bufferPages: true, margins: { top: 48, bottom: 48, left: L, right: L }, info: { Title: title } });
   const chunks: Buffer[] = [];
   doc.on('data', (c: Buffer) => chunks.push(c));
@@ -21,7 +21,7 @@ function pdf(title: string, draw: (doc: Doc) => { company: CompanyInfo }[]): Pro
   return done;
 }
 
-function header(doc: Doc, c: CompanyInfo, title: string, b: BillTo, facts: [string, string | null | undefined][]) {
+export function header(doc: Doc, c: CompanyInfo, title: string, b: BillTo, facts: [string, string | null | undefined][]) {
   const width = doc.page.width - 2 * L;
   doc.font('Helvetica-Bold').fontSize(14).fillColor(ink).text(c.name, L, 48, { width: width / 2 });
   doc.font('Helvetica').fontSize(8.5).fillColor(muted).text([c.addressLine, [c.postalCode, c.city].filter(Boolean).join(' ')].filter(Boolean).join('\n'), { width: width / 2 });

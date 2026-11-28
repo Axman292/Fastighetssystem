@@ -54,6 +54,21 @@ async function openFeeInvoices(client: PoolClient, invoiceId: string): Promise<{
   return rows;
 }
 
+/** Övriga öppna fakturor i samma aktiva avbetalningsplan som fakturan, äldst först. */
+export async function openPlanInvoices(client: PoolClient, invoiceId: string): Promise<{ id: string; balance: number }[]> {
+  const { rows } = await client.query(
+    `select i.id, b.balance_ore::float as balance
+     from payment_plan_invoice me
+     join payment_plan pp on pp.id = me.plan_id and pp.status = 'active'
+     join payment_plan_invoice pi on pi.plan_id = me.plan_id and pi.active and pi.invoice_id <> me.invoice_id
+     join invoice i on i.id = pi.invoice_id join invoice_balance b on b.invoice_id = i.id
+     where me.invoice_id = $1 and me.active and b.balance_ore > 0
+     order by i.due_date, i.invoice_nr`,
+    [invoiceId],
+  );
+  return rows;
+}
+
 /**
  * Fördelar en betalning.
  *  * Med faktura: först fakturan, sedan dess påminnelseavgifter. Överskott ligger kvar ej fördelat.
@@ -83,7 +98,11 @@ export async function allocatePayment(
     if (inv.status !== 'issued' || inv.kind === 'credit_note') throw new BadRequestException('Betalningar fördelas på utfärdade fakturor');
     if (inv.balance <= 0 && opts.amount) throw new ConflictException('Fakturan är redan betald');
     await take(opts.invoiceId, inv.balance);
-    if (opts.amount == null) for (const f of await openFeeInvoices(client, opts.invoiceId)) if (left > 0) await take(f.id, f.balance);
+    if (opts.amount == null) {
+      for (const f of await openFeeInvoices(client, opts.invoiceId)) if (left > 0) await take(f.id, f.balance);
+      // Avbetalningsplan: resten går till planens övriga fakturor, äldst först
+      for (const pi of await openPlanInvoices(client, opts.invoiceId)) if (left > 0) await take(pi.id, pi.balance);
+    }
   } else {
     for (const inv of await openInvoices(client, p.customerId)) if (left > 0) await take(inv.id, inv.balance);
   }
@@ -216,7 +235,8 @@ export async function bookTransaction(client: PoolClient, companyId: string, txI
   const paymentId = p.rows[0].id;
   if (tx.invoice_id) {
     const inv = await invoiceBalance(client, tx.invoice_id);
-    if (inv.balance > 0 || (await openFeeInvoices(client, tx.invoice_id)).length) await allocatePayment(client, companyId, paymentId, { invoiceId: tx.invoice_id });
+    if (inv.balance > 0 || (await openFeeInvoices(client, tx.invoice_id)).length || (await openPlanInvoices(client, tx.invoice_id)).length)
+      await allocatePayment(client, companyId, paymentId, { invoiceId: tx.invoice_id });
   } else if ((await openInvoices(client, tx.customer_id)).length) {
     await allocatePayment(client, companyId, paymentId);
   }

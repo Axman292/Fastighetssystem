@@ -17,9 +17,18 @@ const invoiceSettingsFields: FormFieldDef[] = [
 
 const reminderSettingsFields: FormFieldDef[] = [
   { key: 'reminderFee', label: 'Påminnelseavgift', type: 'kronor', half: true, required: true, hint: 'Högst 60 kr. Tas ut en gång per faktura, om det avtalats i förväg.' },
-  { key: 'lateInterestRate', label: 'Dröjsmålsränta (% per år)', type: 'number', half: true, required: true, hint: 'Referensräntan plus 8 procentenheter enligt räntelagen' },
   { key: 'reminderGraceDays', label: 'Dagar efter förfallodagen innan påminnelse', type: 'number', half: true, required: true },
   { key: 'reminderDueDays', label: 'Ny betalningsfrist på påminnelsen (dagar)', type: 'number', half: true, required: true },
+];
+
+const interestSettingsFields: FormFieldDef[] = [
+  { key: 'lateInterestReference', label: 'Räkna räntan som referensräntan plus en marginal (räntelagen)', type: 'checkbox' },
+  { key: 'lateInterestMargin', label: 'Marginal över referensräntan (procentenheter)', type: 'number', half: true, required: true, hint: 'Räntelagen: 8 procentenheter' },
+  { key: 'lateInterestRate', label: 'Fast ränta (% per år)', type: 'number', half: true, required: true, hint: 'Används bara om rutan ovan inte är ikryssad' },
+  { key: 'lateInterestMin', label: 'Lägsta belopp att debitera', type: 'kronor', half: true, required: true, hint: 'Mindre belopp väntar till nästa gång' },
+  { key: 'lateInterestMethod', label: 'Debiteras', type: 'select', half: true, required: true, options: { next_notice: 'På nästa hyresavi', invoice: 'Som egen räntefaktura' } },
+  { key: 'lateInterestFrom', label: 'Räkna ränta från och med', type: 'date', half: true, required: true, hint: 'Ingen ränta för dagar före detta datum' },
+  { key: 'badDebtAccount', label: 'Konto för kundförluster', half: true, required: true, hint: 'Används när en inkassofordran skrivs av' },
 ];
 
 const purposes: Record<string, string> = {
@@ -76,6 +85,16 @@ export default function CompanyPage({ params }: { params: Promise<{ id: string }
               key={`r-${company.updatedAt}`}
               fields={reminderSettingsFields}
               row={{ ...company, reminderFee: company.reminderFeeOre, lateInterestRate: company.lateInterestBp / 100 } as unknown as Record<string, unknown>}
+              editable={editable}
+              save={async (body) => setCompany(await api<Company>(`/companies/${id}`, { method: 'PATCH', body }))}
+            />
+          </section>
+          <section>
+            <SectionHeader title="Dröjsmålsränta och inkasso" description="Hur ränta på för sent betalda fakturor räknas och debiteras." />
+            <EditForm
+              key={`i-${company.updatedAt}`}
+              fields={interestSettingsFields}
+              row={{ ...company, lateInterestRate: company.lateInterestBp / 100, lateInterestMargin: company.lateInterestMarginBp / 100, lateInterestMin: company.lateInterestMinOre } as unknown as Record<string, unknown>}
               editable={editable}
               save={async (body) => setCompany(await api<Company>(`/companies/${id}`, { method: 'PATCH', body }))}
             />

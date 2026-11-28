@@ -66,7 +66,12 @@ const CANDIDATE_SQL = `
   left join contract k on k.id = i.contract_id
   where i.status = 'issued' and i.kind <> 'credit_note' and b.balance_ore > 0 and i.due_date < $1
     -- påminnelseavgifter påminns inte i sin tur
-    and not exists (select 1 from reminder f where f.fee_invoice_id = i.id)`;
+    and not exists (select 1 from reminder f where f.fee_invoice_id = i.id)
+    -- fakturor i en avbetalningsplan eller ett inkassoärende påminns inte
+    and not exists (select 1 from payment_plan_invoice pi join payment_plan pp on pp.id = pi.plan_id
+                    where pi.invoice_id = i.id and pi.active and pp.status = 'active')
+    and not exists (select 1 from collection_case_invoice ci join collection_case cc on cc.id = ci.case_id
+                    where ci.invoice_id = i.id and ci.active and cc.status in ('prepared', 'sent', 'enforcement'))`;
 
 /** Förfallna fakturor och vad som ska hända med dem per ett datum. */
 export async function reminderCandidates(client: PoolClient, date: string, invoiceIds?: string[]): Promise<ReminderCandidate[]> {

@@ -35,12 +35,21 @@ const companyFields = {
   reminderDueDays: z.number().int().min(1).max(60).optional(),
   // Dröjsmålsränta i procent per år
   lateInterestRate: z.number().finite().min(0).max(50).optional(),
+  // true = referensräntan + marginal enligt räntelagen, false = fast ränta ovan
+  lateInterestReference: z.boolean().optional(),
+  lateInterestMargin: z.number().finite().min(0).max(50).optional(),
+  lateInterestMin: z.number().finite().min(0).max(1000).optional(),
+  lateInterestMethod: z.enum(['next_notice', 'invoice']).optional(),
+  lateInterestFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ogiltigt datum').optional(),
+  badDebtAccount: z.string().regex(/^\d{4}$/, 'Ange ett kontonummer med fyra siffror').optional(),
 };
 /** Kronor och procent från formuläret till öre och baspunkter i databasen. */
-function toColumns<T extends { reminderFee?: number; lateInterestRate?: number }>(d: T) {
-  const { reminderFee, lateInterestRate, ...rest } = d;
+function toColumns<T extends { reminderFee?: number; lateInterestRate?: number; lateInterestMargin?: number; lateInterestMin?: number }>(d: T) {
+  const { reminderFee, lateInterestRate, lateInterestMargin, lateInterestMin, ...rest } = d;
   return {
     ...rest,
+    ...(lateInterestMargin !== undefined ? { lateInterestMarginBp: Math.round(lateInterestMargin * 100) } : {}),
+    ...(lateInterestMin !== undefined ? { lateInterestMinOre: Math.round(lateInterestMin * 100) } : {}),
     ...(reminderFee !== undefined ? { reminderFeeOre: Math.round(reminderFee * 100) } : {}),
     ...(lateInterestRate !== undefined ? { lateInterestBp: Math.round(lateInterestRate * 100) } : {}),
   };
