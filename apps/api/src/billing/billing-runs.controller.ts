@@ -57,7 +57,7 @@ const RUN_SQL = `
          (select count(*) from billing_run_issue x where x.billing_run_id = r.id and x.severity = 'warning')::int as "warningCount",
          (select count(*) from invoice_delivery d join invoice i on i.id = d.invoice_id where i.billing_run_id = r.id and d.status = 'queued')::int as "queuedCount",
          (select count(*) from invoice_delivery d join invoice i on i.id = d.invoice_id where i.billing_run_id = r.id and d.status = 'queued' and d.channel = 'post')::int as "queuedPostCount",
-         (select count(*) from invoice_delivery d join invoice i on i.id = d.invoice_id where i.billing_run_id = r.id and d.status in ('sent','test'))::int as "sentCount",
+         (select count(distinct d.invoice_id) from invoice_delivery d join invoice i on i.id = d.invoice_id where i.billing_run_id = r.id and d.status in ('sent','test'))::int as "sentCount",
          (select count(*) from invoice_delivery d join invoice i on i.id = d.invoice_id where i.billing_run_id = r.id and d.status = 'failed')::int as "failedCount"
   from billing_run r join company co on co.id = r.company_id`;
 
