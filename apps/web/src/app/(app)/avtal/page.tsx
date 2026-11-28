@@ -80,6 +80,9 @@ export default function ContractsPage() {
         description={active ? `Hyresavtal i ${active.companyName}.` : 'Hyresavtal i hela koncernen.'}
         actions={
           <>
+            <Link href="/avtal/hyresjustering">
+              <Button variant="secondary">Hyresjustering</Button>
+            </Link>
             <Link href="/avtal/indexering">
               <Button variant="secondary">Indexuppräkning</Button>
             </Link>
