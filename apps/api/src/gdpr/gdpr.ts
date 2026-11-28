@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
 import { kr } from '../billing/invoice-pdf';
+import { deleteRegistrations } from '../vacancies/vacancies';
 
 /**
  * GDPR-gallring av tidigare hyresgäster.
@@ -180,6 +181,9 @@ export interface Plan {
   blocked: { id: string; customerNr: number; name: string; lastActivity: string; blockers: string[] }[];
   upcoming: { id: string; customerNr: number; name: string; purgeDate: string }[];
   imports: { id: string; batchNr: number; name: string; status: string; lastDate: string; action: 'purge' | 'delete' }[];
+  /** Intresseanmälningar utan kontakt under intresselistans lagringstid. De tas bort helt. */
+  interests: { id: string; registrationNr: number; name: string; status: string; lastActivity: string }[];
+  interestRetentionMonths: number;
   unmatchedBankTransactions: number;
 }
 
@@ -197,7 +201,7 @@ export async function plan(
   const today = todayIso();
   const fiscalStart = (await client.query('select fiscal_year_start from company where id = $1', [companyId])).rows[0]?.fiscal_year_start ?? 1;
   const rows = (await client.query(CANDIDATES_SQL, [companyId, opts.customerId ?? null])).rows as CandidateRow[];
-  const p: Plan = { today, settings, anonymize: [], accounting: [], blocked: [], upcoming: [], imports: [], unmatchedBankTransactions: 0 };
+  const p: Plan = { today, settings, anonymize: [], accounting: [], blocked: [], upcoming: [], imports: [], interests: [], interestRetentionMonths: 12, unmatchedBankTransactions: 0 };
 
   for (const r of rows) {
     const fullMode = r.kind === 'person' || settings.includeOrganizations;
@@ -250,6 +254,17 @@ export async function plan(
         [companyId, settings.importRetentionMonths],
       )
     ).rows;
+    p.interestRetentionMonths =
+      (await client.query('select retention_months from interest_setting where company_id = $1', [companyId])).rows[0]?.retention_months ?? 12;
+    p.interests = (
+      await client.query(
+        `select id, registration_nr as "registrationNr", name, status, last_activity_at::date::text as "lastActivity"
+         from interest_registration
+         where company_id = $1 and last_activity_at < now() - make_interval(months => $2)
+         order by registration_nr`,
+        [companyId, p.interestRetentionMonths],
+      )
+    ).rows;
     p.unmatchedBankTransactions = (
       await client.query(
         `select count(*)::int as n from bank_transaction
@@ -282,7 +297,7 @@ const CUSTOMER_KEYS = [
 const CONTACT_KEYS = ['name', 'role', 'email', 'phone'];
 
 interface LogEntry {
-  kind: 'anonymize' | 'accounting' | 'import';
+  kind: 'anonymize' | 'accounting' | 'import' | 'interest';
   customerId?: string;
   customerNr?: number;
   importBatchId?: string;
@@ -448,6 +463,7 @@ export interface RunResult {
   anonymized: number;
   accounting: number;
   imports: number;
+  interests: number;
   bankTransactions: number;
 }
 
@@ -464,6 +480,10 @@ export async function run(
   for (const c of p.anonymize) log.push(await anonymizeCustomer(client, companyId, c));
   for (const c of p.accounting) log.push(await purgeAccounting(client, companyId, c));
   for (const b of p.imports) log.push(await purgeImport(client, b));
+  if (p.interests.length) {
+    await deleteRegistrations(client, companyId, p.interests.map((r) => r.id));
+    for (const r of p.interests) log.push({ kind: 'interest', details: { registrationNr: r.registrationNr, status: r.status } });
+  }
 
   let bankTransactions = 0;
   if (!opts.customerId && p.unmatchedBankTransactions) {
@@ -497,6 +517,7 @@ export async function run(
     anonymized: p.anonymize.length,
     accounting: p.accounting.length,
     imports: p.imports.length,
+    interests: p.interests.length,
     bankTransactions,
   };
   if (!log.length) return result;
@@ -504,9 +525,9 @@ export async function run(
   const nr = (await client.query('select coalesce(max(run_nr), 0) + 1 as nr from gdpr_run where company_id = $1', [companyId])).rows[0].nr;
   const runId = (
     await client.query(
-      `insert into gdpr_run (company_id, run_nr, trigger, anonymized_count, accounting_count, import_count)
-       values ($1, $2, $3, $4, $5, $6) returning id`,
-      [companyId, nr, trigger, result.anonymized, result.accounting, result.imports],
+      `insert into gdpr_run (company_id, run_nr, trigger, anonymized_count, accounting_count, import_count, interest_count)
+       values ($1, $2, $3, $4, $5, $6, $7) returning id`,
+      [companyId, nr, trigger, result.anonymized, result.accounting, result.imports, result.interests],
     )
   ).rows[0].id;
   for (const e of log) {
