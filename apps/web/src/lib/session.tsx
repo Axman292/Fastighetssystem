@@ -37,6 +37,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  useEffect(() => {
+    if (me?.mfaSetupRequired && window.location.pathname !== '/konto') window.location.href = '/konto';
+  }, [me]);
+
   if (!me) {
     return <div className="flex h-screen items-center justify-center text-[13px] text-ink-3">Laddar…</div>;
   }

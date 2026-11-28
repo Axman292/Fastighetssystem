@@ -24,6 +24,13 @@ services:
       # Bara för testmiljön, aldrig i produktion.
       - key: TEST_COMPANY_DATA
         value: "true"
+      # Nyckel som krypterar hemligheterna för tvåstegsverifiering. Render skapar den själv en gång.
+      # Byt den aldrig: då måste alla sätta upp tvåstegsverifiering på nytt.
+      - key: AUTH_SECRET
+        generateValue: true
+      # Adressen som används i länkar i e-post (inbjudan, nytt lösenord).
+      - key: APP_URL
+        value: https://fastighetssystem-test.onrender.com
       # Fylls i när tjänsten skapas: anslutningsadressen från Neon.
       - key: DATABASE_URL
         sync: false
