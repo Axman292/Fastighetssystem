@@ -37,8 +37,8 @@ const firstObject = (c: string) =>
   `(select co3.object_id from contract_object co3 join rental_object o3 on o3.id = co3.object_id
      where co3.contract_id = ${c}.id order by o3.object_nr limit 1)`;
 
-/** Hyreskonton 3910–3919. Saknas artikeln i registret används den gamla artikelkoden. */
-const IS_RENT = `(a.account_number ~ '^391[0-9]$' or (a.id is null and l.article in ('rent','index','discount','parking','storage')))`;
+/** Hyreskonton enligt kontots rapportgrupp. Saknas artikeln i registret används den gamla artikelkoden. */
+const IS_RENT = `(app.is_rent_account(a.company_id, a.account_number) or (a.id is null and l.article in ('rent','index','discount','parking','storage')))`;
 
 /** Summa av avtalsrader för ett objekt i ett avtal en viss dag. */
 function lineSum(c: string, o: string, day: string, what: 'rent' | 'other' | 'vat'): string {
@@ -186,7 +186,7 @@ async function rentRoll({ client, f, multi }: BuildCtx): Promise<ReportBody> {
       },
     ],
     notes: [
-      `Hyran är den som gäller ${day} enligt avtalens hyresrader, exklusive moms. Hyra är konton 3910–3919, tillägg är övriga artiklar.`,
+      `Hyran är den som gäller ${day} enligt avtalens hyresrader, exklusive moms. Hyra är artiklar på hyreskonton (rapportgrupp Hyresintäkter i kontoplanen), tillägg är övriga artiklar.`,
       'Vakant hyra är objektets egen hyra i objektregistret. Uthyrningsgraden räknas på hyresvärdet.',
     ],
   };

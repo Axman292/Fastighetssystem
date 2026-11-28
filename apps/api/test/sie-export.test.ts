@@ -133,10 +133,10 @@ describe('SIE-export', () => {
     expect(text).toContain('#SIETYP 4');
     expect(text).toMatch(/#ORGNR \d{6}-\d{4}/);
     expect(text).toMatch(/#RAR 0 \d{8} \d{8}/);
-    expect(text).toContain('#KONTO 1510 "Kundfordringar"');
-    expect(text).toContain('#KONTO 3911 "Hyresintäkter"');
+    expect(text).toContain('#KONTO 1510 "Hyres- och avgiftsfordringar"');
+    expect(text).toContain('#KONTO 3010 "Hyresintäkter"');
     expect((text.match(/^#VER /gm) ?? []).length).toBe(before.vouchers.length);
-    expect(text).toMatch(/^#VER "A" "" \d{8} "Hyresavi \d+/m);
+    expect(text).toMatch(/^#VER "E" "" \d{8} "Hyresavi \d+/m);
     // Varje verifikation går jämnt ut i filen
     let sum = 0;
     for (const l of lines) {
@@ -190,7 +190,7 @@ describe('SIE-export', () => {
   });
 
   it('visar inte ett annat bolags exporter', async () => {
-    const other = (await db.query(`select id from company where name like 'Hardeberga%'`)).rows[0].id;
+    const other = (await db.query(`select id from company where name like '%Hardebergabanan'`)).rows[0].id;
     await agent.post('/auth/switch-company').send({ companyId: other }).expect(200);
     expect((await agent.get('/accounting/sie/exports').expect(200)).body).toHaveLength(0);
     await agent.get(`/accounting/sie/exports/${firstExportId}/file`).expect(404);

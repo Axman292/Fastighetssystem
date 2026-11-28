@@ -88,14 +88,14 @@ export async function seedDemo(email: string, password: string, log = console.lo
     };
     const pdf = company('P Dahlqvist Förvaltning AB');
     const hpk = company('HPK AB', 'Fastighets Hemporten K AB', 'Fastighet AB Hemporten K');
-    const hbb = company('Hardebergabanan AB');
+    const hbb = company('Hardebergabanan AB', 'Fastighets AB Hardebergabanan');
     await s.post('/auth/switch-company', { companyId: pdf });
 
     const start = `${monthOffset(-2)}-01`;
     const companyData: [string, Json][] = [
-      [pdf, { bankgiro: '5050-1055', vatNr: 'SE559000001301', invoiceEmail: 'hyror@example.se' }],
-      [hpk, { bankgiro: '5050-1063', vatNr: 'SE559000002201', invoiceEmail: 'ekonomi@example.se' }],
-      [hbb, { bankgiro: '5050-1071', vatNr: 'SE559000003101', invoiceEmail: 'info@example.se' }],
+      [pdf, { bankgiro: '5050-1055', vatNr: 'SE556315142101', invoiceEmail: 'hyror@example.se' }],
+      [hpk, { bankgiro: '5050-1063', vatNr: 'SE556719791701', invoiceEmail: 'ekonomi@example.se' }],
+      [hbb, { bankgiro: '5050-1071', vatNr: 'SE556752060501', invoiceEmail: 'info@example.se' }],
     ];
     for (const [id, body] of companyData) await s.patch(`/companies/${id}`, body);
 

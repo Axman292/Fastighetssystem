@@ -32,8 +32,8 @@ describe('inloggning', () => {
     expect(me.body.activeCompanyId).toBeNull();
     const list = await agent.get('/companies').expect(200);
     expect(list.body.map((c: { name: string }) => c.name)).toEqual([
-      'Hardebergabanan AB',
-      'HPK AB',
+      'Fastighet AB Hemporten K',
+      'Fastighets AB Hardebergabanan',
       'P Dahlqvist Förvaltning AB',
     ]);
   });

@@ -21,6 +21,26 @@ export interface Article {
   useCount: number;
 }
 
+/** Intäktskonto för en artikel i en viss fastighet. Går före artikelns eget konto. */
+export interface ArticleAccount {
+  id: string;
+  companyId: string;
+  article: string;
+  articleName: string;
+  propertyId: string;
+  propertyDesignation: string;
+  propertyName: string;
+  vat: 'any' | 'taxable' | 'exempt';
+  accountNumber: string;
+  accountName: string | null;
+}
+
+export const ARTICLE_ACCOUNT_VAT: Record<ArticleAccount['vat'], string> = {
+  any: 'Alla rader',
+  taxable: 'Rader med moms',
+  exempt: 'Rader utan moms',
+};
+
 /** Artikelregistret för de bolag användaren ser. Hämtas om vid bolagsbyte. */
 export function useArticles(): { articles: Article[] | null; reload: () => void } {
   const { version } = useSession();

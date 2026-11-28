@@ -4,7 +4,7 @@ import { hashPassword } from '../auth/password';
 
 /**
  * Lägger upp en koncern med tre bolag och en koncernadministratör för utveckling.
- * Organisationsnumren är påhittade (men har giltig kontrollsiffra) och ska ersättas med de riktiga.
+ * Bolagen har sina riktiga namn och organisationsnummer (samma som i Hogia DinHyresvärd).
  */
 export async function seed(connectionString: string, adminPassword: string, log = console.log) {
   const client = new Client({ connectionString });
@@ -20,9 +20,9 @@ export async function seed(connectionString: string, adminPassword: string, log 
       rows: [group],
     } = await client.query(`insert into company_group (name) values ('Dahlqvist-koncernen') returning id`);
     const companies = [
-      ['P Dahlqvist Förvaltning AB', withCheckDigit('559000001')],
-      ['HPK AB', withCheckDigit('559000002')],
-      ['Hardebergabanan AB', withCheckDigit('559000003')],
+      ['P Dahlqvist Förvaltning AB', withCheckDigit('556315142')],
+      ['Fastighet AB Hemporten K', withCheckDigit('556719791')],
+      ['Fastighets AB Hardebergabanan', withCheckDigit('556752060')],
     ];
     for (const [name, orgNr] of companies) {
       await client.query(`insert into company (group_id, name, org_nr) values ($1, $2, $3)`, [group.id, name, orgNr]);

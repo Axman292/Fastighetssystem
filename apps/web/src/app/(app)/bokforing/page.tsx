@@ -473,7 +473,7 @@ export default function AccountingExportPage() {
           <li>Tryck på <strong>Exportera SIE</strong>. Filen (slutar på .se) sparas i Hämtade filer på datorn.</li>
           <li>Logga in i Hogia och välj rätt bolag.</li>
           <li>Gå till importen av SIE-fil (oftast under Arkiv, Verktyg eller Import, med ett val i stil med <em>Importera SIE</em> eller <em>Läs in verifikationer</em>).</li>
-          <li>Välj filen. Hogia visar verifikationerna innan de bokförs. Kontrollera att serien är {settings?.series ?? 'A'} och att perioden är öppen.</li>
+          <li>Välj filen. Hogia visar verifikationerna innan de bokförs. Kontrollera att serien är {settings?.series ?? 'E'} och att perioden är öppen.</li>
           <li>Bekräfta. Hogia ger verifikationerna nästa lediga nummer i serien.</li>
         </ol>
         <p className="mt-4 text-[13px] text-ink-2">
