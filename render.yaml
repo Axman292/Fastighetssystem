@@ -47,3 +47,10 @@ services:
         sync: false
       - key: EMAIL_ALLOWLIST
         sync: false
+      # Krypterar bankens SSH-nyckel i databasen (automatisk hämtning av inbetalningar).
+      # Render skapar ett slumpvärde. Byts det måste en ny nyckel skickas till banken.
+      - key: APP_SECRET_KEY
+        generateValue: true
+      # Länk i e-postbesked om inbetalningar att hantera
+      - key: PUBLIC_URL
+        value: https://fastighetssystem-test.onrender.com

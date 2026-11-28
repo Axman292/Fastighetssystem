@@ -24,6 +24,7 @@ import { InvoicesController } from './billing/invoices.controller';
 import { PaymentsController } from './payments/payments.controller';
 import { BankFilesController, BankTransactionsController } from './payments/bank-files.controller';
 import { RemindersController } from './payments/reminders.controller';
+import { BankConnectionsController } from './payments/bank-connections.controller';
 import { LedgerController } from './payments/ledger.controller';
 import { ChargesController } from './billing/charges.controller';
 import { AccountsController, SuppliersController } from './suppliers/suppliers.controller';
@@ -56,6 +57,7 @@ import { AccountingController } from './accounting/accounting.controller';
     PaymentsController,
     BankFilesController,
     BankTransactionsController,
+    BankConnectionsController,
     RemindersController,
     LedgerController,
     AccountsController,
