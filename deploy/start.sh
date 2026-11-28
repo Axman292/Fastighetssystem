@@ -14,6 +14,10 @@ export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=192}"
 
 node apps/api/dist/scripts/migrate.js
 node apps/api/dist/scripts/seed.js
+if [ "${TEST_COMPANY_DATA:-false}" = "true" ]; then
+  # Påhittade bankgiron m.m. på bolag som saknar dem, så att avier kan godkännas i testmiljön.
+  node apps/api/dist/scripts/seed-test-company.js || echo "Påhittade bolagsuppgifter kunde inte läggas in, tjänsten startar ändå."
+fi
 if [ "${DEMO_DATA:-false}" = "true" ]; then
   # Demodata är bara en hjälp: misslyckas den ska tjänsten ändå starta.
   node apps/api/dist/scripts/seed-demo.js || echo "Demodata kunde inte läggas upp, tjänsten startar ändå."

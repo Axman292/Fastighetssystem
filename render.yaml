@@ -20,6 +20,10 @@ services:
       # "true" fyller en tom databas med påhittade demodata vid start. Avstängt: testmiljön börjar tom.
       - key: DEMO_DATA
         value: "false"
+      # "true" fyller i påhittade bankgiron, momsnr och adresser på bolag där de saknas (skriver aldrig över).
+      # Bara för testmiljön, aldrig i produktion.
+      - key: TEST_COMPANY_DATA
+        value: "true"
       # Fylls i när tjänsten skapas: anslutningsadressen från Neon.
       - key: DATABASE_URL
         sync: false

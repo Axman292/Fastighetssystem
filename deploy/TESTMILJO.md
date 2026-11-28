@@ -36,6 +36,11 @@ Varje gång något slås ihop till `main` byggs testmiljön om automatiskt.
 `deploy/start.sh` kör databasmigreringarna, lägger upp koncernen och användaren `admin@example.se`
 om de saknas. Mer läggs inte in: testmiljön börjar tom (`DEMO_DATA=false`).
 
+Med `TEST_COMPANY_DATA=true` (påslaget i `render.yaml`) fylls bolagen vid varje start med påhittade
+betaluppgifter där de saknas: bankgiro (Bankgirots exempelnummer 5050-1055/-1063/-1071), momsnummer,
+adress och fakturamejl. Ifyllda värden skrivs aldrig över. Det behövs för att avier ska kunna godkännas.
+Använd aldrig detta i produktion.
+
 Med `DEMO_DATA=true` fylls en databas utan fastigheter med demodata vid start. Demodatan (`apps/api/src/scripts/seed-demo.ts`) läggs in genom API:et: fyra fastigheter i tre bolag,
 hyresgäster, avtal (två vakanta objekt), avier för fyra månader och betalningar där några hyresgäster
 ligger efter, så att påminnelser och kundreskontra har något att visa.
