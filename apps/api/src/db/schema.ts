@@ -24,6 +24,8 @@ const audit = {
 export const companyGroup = pgTable('company_group', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  requireMfa: boolean('require_mfa').notNull().default(false),
+  sessionIdleMinutes: integer('session_idle_minutes').notNull().default(30),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -100,6 +102,52 @@ export const userSession = pgTable('user_session', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   ip: text('ip'),
   userAgent: text('user_agent'),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const userSecurity = pgTable('user_security', {
+  userId: uuid('user_id').primaryKey(),
+  totpSecret: text('totp_secret'),
+  totpPendingSecret: text('totp_pending_secret'),
+  totpEnabledAt: timestamp('totp_enabled_at', { withTimezone: true }),
+  totpLastStep: bigint('totp_last_step', { mode: 'number' }),
+  failedLogins: integer('failed_logins').notNull().default(0),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  passwordChangedAt: timestamp('password_changed_at', { withTimezone: true }),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+});
+
+export const mfaRecoveryCode = pgTable(
+  'mfa_recovery_code',
+  {
+    userId: uuid('user_id').notNull(),
+    codeHash: text('code_hash').notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.codeHash] })],
+);
+
+export const authToken = pgTable('auth_token', {
+  tokenHash: text('token_hash').primaryKey(),
+  userId: uuid('user_id').notNull(),
+  purpose: text('purpose').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdBy: uuid('created_by'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  attempts: integer('attempts').notNull().default(0),
+});
+
+export const loginEvent = pgTable('login_event', {
+  id: bigint('id', { mode: 'number' }).primaryKey(),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  groupId: uuid('group_id'),
+  userId: uuid('user_id'),
+  email: text('email'),
+  event: text('event').notNull(),
+  ip: text('ip'),
+  userAgent: text('user_agent'),
+  detail: text('detail'),
 });
 
 export const bankAccount = pgTable('bank_account', {

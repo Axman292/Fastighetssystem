@@ -4,6 +4,7 @@ import { APP_FILTER, APP_GUARD, NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AuditController } from './audit/audit.controller';
 import { AuthController } from './auth/auth.controller';
+import { AccountController } from './auth/account.controller';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthService } from './auth/auth.service';
 import { DbErrorsFilter } from './common/db-errors.filter';
@@ -38,6 +39,7 @@ import { CollectionCasesController, LateInterestController, PaymentPlansControll
   controllers: [
     HealthController,
     AuthController,
+    AccountController,
     CompaniesController,
     RegisterController,
     UsersController,
