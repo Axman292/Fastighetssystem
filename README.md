@@ -161,6 +161,15 @@ Under Administration → Dataskydd, per bolag.
 - **Registerutdrag** (artikel 15) för en hyresgäst som PDF eller JSON från kundsidan, med ändamål, rättslig grund, lagringstider, mottagare och rättigheter. Varje utdrag loggas.
 - **Anonymisera på begäran** från kundsidan, utan att vänta på lagringstiden. Hindren och bokföringslagen gäller fortfarande.
 
+## Startsida med nyckeltal
+
+- **Översikt** visar valt bolag eller hela koncernen: uthyrningsgrad (på hyresvärde och antal objekt), avtalad hyra per månad, obetalt och förfallet, inbetalt denna månad mot det som förfaller i månaden, lediga objekt, omatchade inbetalningar och avtal att hantera.
+- **Diagram** över fakturerat och inbetalt per månad det senaste året och obetalt efter ålder.
+- **Avtal** som slutar inom 90 dagar, uppsägningar som kommit in de senaste 30 dagarna och bevakningslistan för avtal.
+- **Uthyrning per fastighet** och, i koncernvyn, en tabell per bolag.
+- Varje tal länkar till listan det är räknat ur. Talen kommer från `GET /dashboard` (`apps/api/src/dashboard`).
+- **Andra moduler kan lägga till egna kort**, till exempel öppna felanmälningar, med `registerDashboardExtra` i `apps/api/src/dashboard/extras.ts`.
+
 ## Struktur
 
 ```
