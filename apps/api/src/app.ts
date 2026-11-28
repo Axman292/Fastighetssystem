@@ -30,6 +30,7 @@ import { SupplierInvoicesController } from './suppliers/supplier-invoices.contro
 import { EconomyController } from './economy/economy.controller';
 import { ArticlesController } from './articles/articles.controller';
 import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.controller';
+import { ReportsController } from './reports/reports.controller';
 
 @Module({
   controllers: [
@@ -60,6 +61,7 @@ import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.c
     EconomyController,
     ArticlesController,
     RentAdjustmentsController,
+    ReportsController,
   ],
   providers: [
     AuthService,
