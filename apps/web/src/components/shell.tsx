@@ -60,10 +60,10 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="flex size-7 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">
             {initials(me.user.name)}
           </div>
-          <div className="min-w-0 flex-1">
+          <Link href="/konto" className="min-w-0 flex-1 rounded hover:text-accent" title="Mitt konto">
             <div className="truncate text-[13px] font-medium">{me.user.name}</div>
-            <div className="truncate text-[11.5px] text-ink-3">{me.user.email}</div>
-          </div>
+            <div className="truncate text-[11.5px] text-ink-3">{me.mfaSetupRequired ? 'Slå på tvåstegsverifiering' : 'Mitt konto'}</div>
+          </Link>
           <button
             className="rounded p-1 text-ink-3 hover:bg-subtle hover:text-ink"
             title="Logga ut"

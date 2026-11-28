@@ -192,7 +192,9 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 - Varje API-anrop körs som databasrollen `fastighet_app`, som omfattas av RLS. Valda bolag sätts per transaktion (`app.company_ids`).
 - Sessioner lagras som SHA-256 av en slumpad token i en http-only-cookie. Lösenord hashas med scrypt.
 - I produktion ska `COOKIE_SECURE=true` och trafiken gå över https.
-- Inloggning med BankID och tvåfaktor läggs till som en ytterligare inloggningsmetod som skapar samma typ av session (`AuthService.createSession`).
+- Inloggning: e-post och lösenord, och tvåstegsverifiering med autentiseringsapp (TOTP, RFC 6238) med reservkoder. Användare bjuds in med e-postlänk och väljer själva lösenord; glömt lösenord skickar en länk som gäller 1 timme. Kontot spärras 15 minuter efter 5 fel, för många fel från samma IP stoppas, och sessionen loggas ut efter inaktivitet (koncernens inställning, standard 30 minuter) och senast efter 12 timmar. Allt loggas i `login_event` och visas under Användare → Inloggningslogg. Koncernadministratören kan kräva tvåstegsverifiering för alla.
+- `AUTH_SECRET` krypterar hemligheterna för tvåstegsverifiering (AES-256-GCM). Sätt den i produktion och byt den aldrig. `APP_URL` är adressen i länkar i e-post.
+- BankID kan läggas till som ytterligare inloggningsmetod som skapar samma typ av session (`AuthService.createSession`).
 
 ## Nästa fas
 

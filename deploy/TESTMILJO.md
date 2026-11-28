@@ -65,3 +65,14 @@ Renders gratisnivå spärrar SMTP-portarna, så e-post skickas via Brevos HTTP-A
 
 `EMAIL_ALLOWLIST_ONLY=true` står i `render.yaml`: mejl till andra adresser skickas inte utan sparas i
 testläge, och fakturan visar varför under *Utskick*. Utan `BREVO_API_KEY` körs allt i testläge.
+
+## Inloggning och användare
+
+- Under **Användare** bjuder du in nya användare med e-post. De får en länk och väljer själva sitt
+  lösenord. I testmiljön skickas inbjudan bara till adresser i `EMAIL_ALLOWLIST`; annars visas länken
+  på skärmen så att du kan skicka den själv.
+- Under **Mitt konto** (klicka på ditt namn längst ned till vänster) slår du på tvåstegsverifiering
+  med en app i telefonen, byter lösenord och ser inloggade enheter.
+- `AUTH_SECRET` skapas automatiskt av Render och krypterar tvåstegsnycklarna. Ändra den aldrig.
+- Kommer du inte in: välj *Glömt lösenordet?* på inloggningssidan. Har du tappat telefonen, använd en
+  reservkod. Som sista utväg kan en annan koncernadministratör nollställa tvåstegsverifieringen.
