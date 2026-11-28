@@ -2,7 +2,7 @@ import type { PoolClient } from 'pg';
 import { addDays } from '../contracts/contract-rules';
 import { bankDayOnOrAfter } from '../billing/billing-rules';
 import { BillTo, billToFor, companyInfo, CompanyInfo, insertLines, issueInvoices, recalcInvoice } from '../billing/invoice-store';
-import { sendOrSave } from '../billing/delivery';
+import { deliverEmail } from '../billing/delivery';
 import { kr } from '../billing/invoice-pdf';
 import { renderRemindersPdf } from './letters-pdf';
 
@@ -278,11 +278,10 @@ export async function sendReminders(client: PoolClient, ids: string[]): Promise<
         (c.bankgiro ? `Bankgiro: ${c.bankgiro}\n` : '') +
         `OCR-nummer: ${r.ocr}\n\nPåminnelsen finns bifogad.\n\nVänliga hälsningar\n${c.name}` +
         (c.invoiceEmail ? `\n${c.invoiceEmail}` : '');
-      const from = process.env.SMTP_FROM ?? c.invoiceEmail ?? 'no-reply@example.se';
-      const status = await sendOrSave(
+      const { status, note } = await deliverEmail(
         {
-          from: `"${c.name.replace(/"/g, '')}" <${from}>`,
-          replyTo: c.invoiceEmail ?? undefined,
+          fromName: c.name,
+          replyTo: c.invoiceEmail,
           to: r.recipient,
           subject: `${title}: faktura ${r.invoiceNr} från ${c.name}`,
           text,
@@ -290,7 +289,7 @@ export async function sendReminders(client: PoolClient, ids: string[]): Promise<
         },
         `${r.companyId}-paminnelse-${r.invoiceNr}-${r.level}`,
       );
-      await client.query(`update reminder set status = $2, sent_at = now(), error = null where id = $1`, [r.id, status]);
+      await client.query(`update reminder set status = $2, sent_at = now(), error = $3 where id = $1`, [r.id, status, note]);
       result[status] += 1;
     } catch (err) {
       await client.query(`update reminder set status = 'failed', error = $2 where id = $1`, [r.id, (err as Error).message.slice(0, 500)]);

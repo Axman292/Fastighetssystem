@@ -454,7 +454,7 @@ function Delivery({
                   reload();
                   setNotice(
                     r.test
-                      ? `${r.test} avier skapades i testläge (e-post är inte ansluten ännu, så inget skickades till hyresgästerna).${r.failed ? ` ${r.failed} misslyckades.` : ''}`
+                      ? `${r.test} avier skickades inte på riktigt (testläge eller adresser som inte är tillåtna i testmiljön). Se Utskick på varje avi.${r.failed ? ` ${r.failed} misslyckades.` : ''}`
                       : `${r.sent} avier skickades.${r.failed ? ` ${r.failed} misslyckades.` : ''}`,
                   );
                 })
