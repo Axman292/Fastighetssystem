@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import nodemailer, { Transporter } from 'nodemailer';
 import type { PoolClient } from 'pg';
-import { renderInvoicePdf } from './invoice-pdf';
+import { autogiroState, renderInvoicePdf } from './invoice-pdf';
 import { InvoiceDetail, loadInvoice } from './invoice-store';
 import { peppolXml } from './peppol';
 
@@ -138,9 +138,16 @@ function mailFor(d: InvoiceDetail, pdf: Buffer, to: string): OutgoingMail {
   const title = TITLE[d.kind] ?? 'Faktura';
   const credit = d.kind === 'credit_note';
   const kr = (ore: number) => `${(ore / 100).toLocaleString('sv-SE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`;
+  const ag = autogiroState(d);
   const text = credit
     ? `Hej,\n\nBifogat finns kreditfaktura ${d.invoiceNr} från ${d.company.name} på ${kr(-d.totalOre)}.\n\nVänliga hälsningar\n${d.company.name}`
-    : `Hej,\n\nBifogat finns ${title.toLowerCase()} ${d.invoiceNr} från ${d.company.name}.\n\n` +
+    : ag === 'withdraw'
+    ? `Hej,\n\nBifogat finns ${title.toLowerCase()} ${d.invoiceNr} från ${d.company.name}.\n\n` +
+      `Belopp: ${kr(d.totalOre)}\nDras via autogiro: ${d.autogiro?.paymentDate ?? d.dueDate}\n\n` +
+      `Beloppet dras automatiskt från ditt konto. Du ska inte betala själv. Se till att pengarna finns på kontot dagen före.\n\n` +
+      `Vänliga hälsningar\n${d.company.name}` +
+      (d.company.invoiceEmail ? `\n${d.company.invoiceEmail}` : '')
+    : `Hej,\n\n${ag === 'failed' ? 'Dragningen via autogiro gick inte igenom, så du behöver betala själv. ' : ''}Bifogat finns ${title.toLowerCase()} ${d.invoiceNr} från ${d.company.name}.\n\n` +
       `Att betala: ${kr(d.totalOre)}\nFörfallodatum: ${d.dueDate}\n` +
       (d.company.bankgiro ? `Bankgiro: ${d.company.bankgiro}\n` : d.company.plusgiro ? `Plusgiro: ${d.company.plusgiro}\n` : '') +
       `OCR-nummer: ${d.ocr}\n\nVänliga hälsningar\n${d.company.name}` +

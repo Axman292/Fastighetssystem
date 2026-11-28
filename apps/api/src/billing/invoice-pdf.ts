@@ -200,6 +200,19 @@ function drawInvoice(doc: Doc, d: InvoiceDetail) {
       by + 30,
       { width: width - 32 },
     );
+  } else if (autogiroState(d) === 'withdraw') {
+    const cells: [string, string][] = [
+      ['Betalning', 'Autogiro'],
+      ['Dras den', d.autogiro?.paymentDate ?? d.dueDate],
+      ['OCR-nummer', d.ocr ?? ''],
+      ['Belopp', kr(d.totalOre)],
+    ];
+    const cw = (width - 32) / 4;
+    cells.forEach(([label, value], i) => {
+      doc.font('Helvetica').fontSize(8).fillColor(muted).text(label, L + 16 + i * cw, by + 16, { width: cw - 8 });
+      doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(value, L + 16 + i * cw, by + 30, { width: cw - 8 });
+    });
+    doc.font('Helvetica').fontSize(8).fillColor(muted).text('Beloppet dras automatiskt från ditt konto via autogiro. Du ska inte betala själv. Se till att pengarna finns på kontot dagen före.', L + 16, by + 54, { width: width - 32 });
   } else {
     const cells: [string, string][] = [
       [c.bankgiro ? 'Bankgiro' : 'Plusgiro', c.bankgiro ?? c.plusgiro ?? 'saknas'],
@@ -212,6 +225,26 @@ function drawInvoice(doc: Doc, d: InvoiceDetail) {
       doc.font('Helvetica').fontSize(8).fillColor(muted).text(label, L + 16 + i * cw, by + 16, { width: cw - 8 });
       doc.font('Helvetica-Bold').fontSize(12).fillColor(ink).text(value, L + 16 + i * cw, by + 30, { width: cw - 8 });
     });
-    doc.font('Helvetica').fontSize(8).fillColor(muted).text('Ange OCR-numret vid betalning så registreras betalningen automatiskt.', L + 16, by + 54, { width: width - 32 });
+    const failed = autogiroState(d) === 'failed';
+    doc
+      .font(failed ? 'Helvetica-Bold' : 'Helvetica')
+      .fontSize(8)
+      .fillColor(failed ? ink : muted)
+      .text(
+        failed
+          ? 'Dragningen via autogiro gick inte igenom. Betala själv till bankgirot med OCR-numret så snart som möjligt.'
+          : 'Ange OCR-numret vid betalning så registreras betalningen automatiskt.',
+        L + 16,
+        by + 54,
+        { width: width - 32 },
+      );
   }
+}
+
+/** withdraw = avin dras via autogiro, failed = dragningen gick inte igenom och avin ska betalas som vanligt. */
+export function autogiroState(d: Pick<InvoiceDetail, 'autogiro' | 'kind'>): 'withdraw' | 'failed' | null {
+  if (!d.autogiro || d.kind === 'credit_note') return null;
+  if (d.autogiro.status === 'planned' || d.autogiro.status === 'sent') return 'withdraw';
+  if (d.autogiro.status === 'failed' || (d.autogiro.status === 'cancelled' && d.autogiro.message !== 'Avin var redan betald')) return 'failed';
+  return null;
 }
