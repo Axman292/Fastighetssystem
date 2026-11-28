@@ -91,6 +91,20 @@ E-post skickas via SMTP när `SMTP_HOST` (och vid behov `SMTP_PORT`, `SMTP_USER`
 
 Databasen hindrar att samma leverantörsfaktura registreras två gånger, att en attesterad faktura eller dess kontering ändras, att en faktura attesteras med kontering som inte stämmer och att mer betalas än fakturans belopp.
 
+## Rapporter
+
+Under **Rapporter** finns sju rapporter. Alla visar valt bolag eller hela koncernen, kan begränsas till en fastighet och kan hämtas som **Excel** eller **PDF**.
+
+- **Hyreslista.** Alla objekt per ett datum med hyresgäst, avtal, hyra, tillägg, moms, årshyra och kr/m², och en sammanställning per fastighet med vakant hyra och uthyrningsgrad.
+- **Aviseringsjournal.** Utfärdade avier, fakturor och kreditfakturor under perioden, med summor per artikel, konto och momssats.
+- **Månadsanalys.** Fakturerad hyra och tillägg, krediterat, moms, inbetalt och hyresbortfall för vakanser månad för månad, och netto per fastighet och månad.
+- **Avstämning kundfordran.** Ingående saldo, fakturerat, krediterat, inbetalt, återbetalt och utgående saldo per kund. När perioden slutar i dag eller senare kontrolleras saldot mot kundreskontrans öppna poster, och differensen ska vara noll.
+- **Momsavstämning.** Utgående moms per momssats och konto, ingående moms från leverantörsfakturor och ett förslag till momsdeklarationens rutor 05, 10–12, 42, 48 och 49.
+- **Frivillig skattskyldighet.** Momspliktiga lokaler, momspliktig andel av area och hyra per fastighet (underlag för avdrag av ingående moms) och avvikelser, till exempel ett momspliktigt objekt där avtalet saknar moms eller en privatperson som hyresgäst.
+- **In- och avflyttningslista.** Alla in- och avflyttningar under perioden med objekt, hyresgäst, hyra och uppsägning.
+
+Rapporterna läser bara data. De ändrar ingenting och kräver ingen ny databastabell.
+
 ## Struktur
 
 ```
