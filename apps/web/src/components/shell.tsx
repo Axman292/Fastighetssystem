@@ -19,6 +19,7 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/fakturor', label: 'Fakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3" /> },
   { href: '/inbetalningar', label: 'Inbetalningar', icon: <Icon d="M3 7h14v9H3zM3 10h14M6 13h3" /> },
   { href: '/paminnelser', label: 'Påminnelser', icon: <Icon d="M10 3a5 5 0 0 0-5 5v3l-1.5 3h13L15 11V8a5 5 0 0 0-5-5zM8 16a2 2 0 0 0 4 0" /> },
+  { href: '/inkasso', label: 'Ränta och inkasso', icon: <Icon d="M4 16h12M6 16V9M10 16V6M14 16v-4M4 6l3-2 3 2 3-2 3 2" /> },
   { href: '/reskontra', label: 'Kundreskontra', icon: <Icon d="M4 4h12v12H4zM4 8h12M8 8v8" /> },
   { href: '/leverantorer', label: 'Leverantörer', icon: <Icon d="M3 6h9v8H3zM12 9h3l2 2.5V14h-5M6 16.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM14 16.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" /> },
   { href: '/leverantorsfakturor', label: 'Leverantörsfakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3M8.5 13h2" /> },

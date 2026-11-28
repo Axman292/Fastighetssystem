@@ -115,6 +115,17 @@ Under **Rapporter** finns sju rapporter. Alla visar valt bolag eller hela koncer
 
 Rapporterna läser bara data. De ändrar ingenting och kräver ingen ny databastabell.
 
+## Dröjsmålsränta, avbetalningsplaner och inkasso
+
+Under **Ränta och inkasso**.
+
+- **Dröjsmålsränta debiteras på riktigt.** Räntan räknas per dag från dagen efter förfallodagen på det som var obetalt, även för fakturor som redan betalats för sent. Satsen är referensräntan för kalenderhalvåret plus 8 procentenheter (räntelagen), en fast ränta per bolag eller en avtalad ränta på avtalet. Referensräntorna ligger i tabellen `reference_rate` och fylls på varje 1 januari och 1 juli (`PUT /reference-rates`, koncernadministratör).
+- **Debiteras på nästa hyresavi** (en extra debitering på avtalet) eller **som egen räntefaktura** som skickas som vanligt. Fakturor utan avtal får alltid räntefaktura. Räntan är momsfri och bokförs på 8313 (artikeln Dröjsmålsränta). Samma dag räntedebiteras aldrig två gånger (databasen stoppar det), och det blir ingen ränta på ränta eller på påminnelseavgifter. Belopp under bolagets lägsta belopp växer till nästa gång. Ingen ränta räknas före bolagets startdatum, som är dagen då funktionen installerades.
+- **Avbetalningsplaner** för en eller flera obetalda fakturor, i ett antal lika delbetalningar eller med ett belopp per månad. Hyresgästen betalar med OCR-numret på planens första faktura och betalningen fördelas på planens fakturor, äldst först. Fakturorna påminns inte och lämnas inte till inkasso så länge planen gäller. Brev till hyresgästen som PDF. En plan kan markeras som klar, bruten eller makulerad.
+- **Inkasso.** Fakturor som fått båda påminnelserna utan att betalas visas som redo för inkasso. Ett ärende per hyresgäst samlar fakturorna med deras påminnelseavgifter, räntefakturor och upplupen ränta. Ärendefil till inkassobolaget som **Excel** eller **CSV**, och en **kravsammanställning** som PDF. Status: förberett, skickat till inkasso, betalningsföreläggande, betalt, återkallat eller avskrivet. Hos inkassobolaget debiterar systemet ingen egen ränta. Inbetalningar registreras som vanligt.
+- **Avskrivning som kundförlust.** Det obetalda krediteras med en kreditfaktura som bokförs på kundförlustkontot (standard 6350) och följer med SIE-exporten. Momsen på momspliktiga fakturor återförs.
+- **Inställningar per bolag** under Bolag: referensränta eller fast ränta, marginal, lägsta belopp, hur räntan debiteras, startdatum och konto för kundförluster.
+
 ## Bokföring med SIE-fil
 
 Under **Bokföring** skapas en SIE-fil (SIE typ 4, PC8) med verifikationer för valt bolag, som läses in i Hogia eller ett annat ekonomiprogram. Ingen koppling mot Hogias API behövs.

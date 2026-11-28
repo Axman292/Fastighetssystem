@@ -250,7 +250,12 @@ export default function RemindersPage() {
       {tab === 'collection' && (
         <>
           <p className="mb-3 text-[13px] text-ink-2">
-            Båda påminnelserna är skickade och fristen har gått ut. Nästa steg är att kontakta hyresgästen eller lämna skulden till ett inkassobolag.
+            Båda påminnelserna är skickade och fristen har gått ut. Nästa steg är att kontakta hyresgästen, göra en avbetalningsplan eller lämna skulden
+            till ett inkassobolag under{' '}
+            <Link href="/inkasso" className="text-accent hover:underline">
+              Ränta och inkasso
+            </Link>
+            .
             För bostadshyra kan obetald hyra också vara grund för uppsägning, men det kräver en särskild underrättelse som ännu inte görs i systemet.
           </p>
           <Table head={['Kund', 'Faktura', 'Förföll', 'Dagar sen', 'Obetalt', 'Upplupen ränta', 'Senaste påminnelse']} empty="Inga fakturor är redo för inkasso.">

@@ -60,6 +60,8 @@ const contractFields = {
   billingInterval: z.enum(['month', 'quarter']).default('month'),
   billingInAdvance: z.boolean().default(true),
   paymentTermsDays: z.number().int().min(0).max(120).nullable().optional(),
+  /** Avtalad dröjsmålsränta i baspunkter. Tomt = bolagets ränta. */
+  lateInterestBp: z.number().int().min(0).max(5000).nullable().optional(),
   renegotiateBy: optDate,
   signedDate: optDate,
   specialTerms: nullableText(10000),
