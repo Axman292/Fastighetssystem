@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { use, useEffect, useMemo, useState } from 'react';
 import { PeriodPicker, PeriodValue, periodRange } from '@/components/period-picker';
-import { Card, ErrorNote, Input, PageHeader, Select, cx } from '@/components/ui';
+import { Card, ErrorNote, Input, PageHeader, Select, SortHeader, cx } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
 import { fmtNum, fmtOre, fmtPct, todayIso } from '@/lib/format';
 import type { Cell, ColumnType, Report, ReportInfo, ReportSection } from '@/lib/reports';
 import { useSession } from '@/lib/session';
+import { compareSortValues, toSortValue, useSortState } from '@/lib/table-sort';
 
 interface PropertyOption {
   id: string;
@@ -165,6 +166,16 @@ function DownloadLink({ href, label, newTab }: { href: string; label: string; ne
 }
 
 function SectionTable({ section: s }: { section: ReportSection }) {
+  // Sorteringen gäller bara visningen; Excel och PDF följer rapportens egen ordning.
+  const { sort, toggle } = useSortState(`rapport|${s.title ?? ''}|${s.columns.map((c) => c.label).join('|')}`);
+  const sortCol = sort ? s.columns.find((c) => c.label === sort.label) : undefined;
+  const rows = useMemo(() => {
+    if (!sort || !sortCol) return s.rows;
+    return s.rows
+      .map((r, i) => ({ r, i, v: toSortValue(r[sortCol.key]) }))
+      .sort((a, b) => compareSortValues(a.v, b.v, sort.dir) || a.i - b.i)
+      .map((x) => x.r);
+  }, [s.rows, sort, sortCol]);
   return (
     <section>
       {s.title && <h2 className="mb-1 text-[14px] font-semibold">{s.title}</h2>}
@@ -174,14 +185,22 @@ function SectionTable({ section: s }: { section: ReportSection }) {
           <thead>
             <tr className="border-b border-line bg-subtle/60">
               {s.columns.map((c) => (
-                <th key={c.key} className={cx('h-8 whitespace-nowrap px-3 text-[12px] font-medium text-ink-3', NUMERIC.has(c.type) && 'text-right')}>
-                  {c.label}
+                <th
+                  key={c.key}
+                  className={cx('h-8 whitespace-nowrap px-3 text-[12px] font-medium text-ink-3', NUMERIC.has(c.type) && 'text-right')}
+                  aria-sort={sortCol?.key === c.key ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
+                  {s.rows.length > 1 && c.label ? (
+                    <SortHeader label={c.label} dir={sortCol?.key === c.key ? sort!.dir : null} onClick={() => toggle(c.label)} alignRight={NUMERIC.has(c.type)} />
+                  ) : (
+                    c.label
+                  )}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {s.rows.map((r, i) => (
+            {rows.map((r, i) => (
               <tr key={i} className="hover:bg-subtle/50">
                 {s.columns.map((c) => (
                   <td

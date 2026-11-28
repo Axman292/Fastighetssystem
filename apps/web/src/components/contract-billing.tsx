@@ -93,7 +93,9 @@ export function ContractBilling({
                 {c.objectNr && <span className="mr-2 text-ink-3">{c.objectNr}</span>}
                 {c.description}
               </Td>
-              <Td className="text-ink-2">{fmtMonth(c.billFrom)}</Td>
+              <Td className="text-ink-2" sortValue={c.billFrom}>
+                {fmtMonth(c.billFrom)}
+              </Td>
               <Td className="text-ink-2">{VAT_LABEL[String(c.vatRateBp)]}</Td>
               <Td className="tabular">{fmtOre(c.amountOre, true)}</Td>
               <Td>

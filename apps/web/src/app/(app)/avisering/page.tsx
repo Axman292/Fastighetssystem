@@ -80,7 +80,7 @@ export default function BillingPage() {
               <Td className="font-medium tabular">
                 <Link href={`/avisering/${r.id}`}>{r.runNr}</Link>
               </Td>
-              <Td>{fmtMonth(r.periodMonth)}</Td>
+              <Td sortValue={r.periodMonth}>{fmtMonth(r.periodMonth)}</Td>
               {!active && <Td className="text-ink-2">{r.companyName}</Td>}
               <Td className="tabular text-ink-2">{r.invoiceDate}</Td>
               <Td className="tabular">{r.invoiceCount}</Td>

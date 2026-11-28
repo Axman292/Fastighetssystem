@@ -254,7 +254,9 @@ export default function InvoicePage({ params }: { params: Promise<{ id: string }
                           </div>
                         )}
                       </Td>
-                      <Td className="text-ink-2">{l.periodFrom ? fmtPeriod(l.periodFrom, l.periodTo) : ''}</Td>
+                      <Td className="text-ink-2" sortValue={l.periodFrom}>
+                        {l.periodFrom ? fmtPeriod(l.periodFrom, l.periodTo) : ''}
+                      </Td>
                       <Td className="text-ink-2">{l.vatRateBp ? `${l.vatRateBp / 100} %` : 'Momsfri'}</Td>
                       <Td className="text-right tabular">{fmtOre(l.netOre, true)}</Td>
                     </tr>

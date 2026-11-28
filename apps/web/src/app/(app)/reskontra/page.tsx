@@ -78,6 +78,22 @@ export default function LedgerPage() {
 
       <Table
         head={['Kund', ...(active ? [] : ['Bolag']), 'Ej förfallet', '1–30 dagar', '31–60', '61–90', 'Över 90', 'Ej fördelat', 'Saldo', '']}
+        foot={
+          t && rows.length > 0 && !q && !onlyOverdue && (
+            <tr className="bg-subtle/60 font-medium">
+              <Td>Summa</Td>
+              {!active && <Td />}
+              <Td className="tabular">{fmtOre(t.notDueOre)}</Td>
+              <Td className="tabular">{fmtOre(t.d1to30Ore)}</Td>
+              <Td className="tabular">{fmtOre(t.d31to60Ore)}</Td>
+              <Td className="tabular">{fmtOre(t.d61to90Ore)}</Td>
+              <Td className="tabular">{fmtOre(t.over90Ore)}</Td>
+              <Td className="tabular">{t.unallocatedOre ? `−${fmtOre(t.unallocatedOre)}` : '–'}</Td>
+              <Td className="tabular">{fmtOre(t.balanceOre)}</Td>
+              <Td />
+            </tr>
+          )
+        }
         empty={l ? 'Inga kunder har obetalda fakturor.' : undefined}
       >
         {rows.map((r) => (
@@ -101,20 +117,6 @@ export default function LedgerPage() {
             <Td>{r.reminderLevel > 0 && <Badge tone={r.reminderLevel === 2 ? 'bad' : 'warn'}>{REMINDER_LEVEL_LABEL[r.reminderLevel]}</Badge>}</Td>
           </tr>
         ))}
-        {t && rows.length > 0 && !q && !onlyOverdue && (
-          <tr className="bg-subtle/60 font-medium">
-            <Td>Summa</Td>
-            {!active && <Td />}
-            <Td className="tabular">{fmtOre(t.notDueOre)}</Td>
-            <Td className="tabular">{fmtOre(t.d1to30Ore)}</Td>
-            <Td className="tabular">{fmtOre(t.d31to60Ore)}</Td>
-            <Td className="tabular">{fmtOre(t.d61to90Ore)}</Td>
-            <Td className="tabular">{fmtOre(t.over90Ore)}</Td>
-            <Td className="tabular">{t.unallocatedOre ? `−${fmtOre(t.unallocatedOre)}` : '–'}</Td>
-            <Td className="tabular">{fmtOre(t.balanceOre)}</Td>
-            <Td />
-          </tr>
-        )}
       </Table>
     </>
   );

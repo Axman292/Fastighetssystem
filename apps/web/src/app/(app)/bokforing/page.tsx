@@ -323,7 +323,17 @@ export default function AccountingExportPage() {
               <>
                 <section>
                   <h2 className="mb-2 text-[14px] font-semibold">Summa per konto</h2>
-                  <Table head={['Konto', 'Namn', <span key="d" className="block text-right">Debet</span>, <span key="k" className="block text-right">Kredit</span>]}>
+                  <Table
+                    head={['Konto', 'Namn', <span key="d" className="block text-right">Debet</span>, <span key="k" className="block text-right">Kredit</span>]}
+                    foot={
+                      <tr className="font-medium">
+                        <Td />
+                        <Td>Summa</Td>
+                        <Td className="text-right tabular">{fmtOre(preview.summary.debitOre, true)}</Td>
+                        <Td className="text-right tabular">{fmtOre(preview.summary.accounts.reduce((s, a) => s + a.creditOre, 0), true)}</Td>
+                      </tr>
+                    }
+                  >
                     {preview.summary.accounts.map((a) => (
                       <tr key={a.account}>
                         <Td className="tabular">{a.account}</Td>
@@ -332,12 +342,6 @@ export default function AccountingExportPage() {
                         <Td className="text-right tabular">{a.creditOre ? fmtOre(a.creditOre, true) : ''}</Td>
                       </tr>
                     ))}
-                    <tr className="font-medium">
-                      <Td />
-                      <Td>Summa</Td>
-                      <Td className="text-right tabular">{fmtOre(preview.summary.debitOre, true)}</Td>
-                      <Td className="text-right tabular">{fmtOre(preview.summary.accounts.reduce((s, a) => s + a.creditOre, 0), true)}</Td>
-                    </tr>
                   </Table>
                 </section>
 
