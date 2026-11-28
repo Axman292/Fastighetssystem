@@ -115,6 +115,18 @@ Under **Rapporter** finns sju rapporter. Alla visar valt bolag eller hela koncer
 
 Rapporterna läser bara data. De ändrar ingenting och kräver ingen ny databastabell.
 
+## Bokföring med SIE-fil
+
+Under **Bokföring** skapas en SIE-fil (SIE typ 4, PC8) med verifikationer för valt bolag, som läses in i Hogia eller ett annat ekonomiprogram. Ingen koppling mot Hogias API behövs.
+
+- **Period** väljs som månad (standard), vecka, dag eller valfri period. Knappen *Allt sedan förra exporten* fyller i perioden från förra exporten till i dag.
+- **Innehåll:** avier, fakturor och kreditfakturor (kundfordran mot intäktskonto per artikel, utgående moms per sats, öresavrundning), påminnelseavgifter (egna fakturor), inbetalningar (bank mot kundfordran, ej fördelat belopp på förskott från kunder 2420), senare fördelning av förskott, återbetalningar, attesterade leverantörsfakturor (kostnad, ingående moms, leverantörsskuld) och betalningar till leverantörer.
+- **Förhandsgranskning** med verifikationer, kontering, summa per konto och varningar: ej godkända aviseringskörningar, ej bokförda bankfiler, ej attesterade leverantörsfakturor och konton som saknas i kontoplanen.
+- **Ingen dubbelbokföring.** Varje händelse exporteras en gång. Exporteras samma period igen kommer bara det nya med. Ändras eller tas något bort efter exporten (till exempel en betalning) kommer en rättelseverifikation med nästa export. Händelser som registrerats i efterhand med datum i en redan exporterad period följer med i nästa export med sitt eget datum.
+- **Ångra** går för den senaste exporten, om filen inte gick att läsa in.
+- **Inställningar per bolag:** verifikationsserie (standard A), startdatum (det som hänt före finns redan i bokföringen), konton för bank, kundfordran, förskott, leverantörsskuld, moms och öresavrundning, och om kostnadsställe (dimension 1) och fastighet som projekt (dimension 6) ska följa med.
+- Verifikationsnumret lämnas tomt så att ekonomiprogrammet numrerar. Varje fil sparas och kan hämtas igen.
+
 ## Struktur
 
 ```
@@ -161,4 +173,4 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 
 ## Nästa fas
 
-Bestäms tillsammans med axel. Kopplingen till Hogia väntar tills vidare.
+Bestäms tillsammans med axel. Bokföringen förs över till Hogia med SIE-fil; en direktkoppling mot Hogias API väntar.

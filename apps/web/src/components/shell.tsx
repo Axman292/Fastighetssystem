@@ -24,6 +24,7 @@ const nav: { href: string; label: string; icon: ReactNode; soon?: boolean }[] = 
   { href: '/leverantorsfakturor', label: 'Leverantörsfakturor', icon: <Icon d="M6 3h8v14l-2-1.5-2 1.5-2-1.5L6 17zM8.5 7h3M8.5 10h3M8.5 13h2" /> },
   { href: '/ekonomi', label: 'Ekonomi', icon: <Icon d="M4 16V9M8 16V5M12 16v-5M16 16V7" /> },
   { href: '/rapporter', label: 'Rapporter', icon: <Icon d="M5 3h10v14H5zM8 7h4M8 10h4M8 13h2" /> },
+  { href: '/bokforing', label: 'Bokföring', icon: <Icon d="M4 4h12v12H4zM10 4v12M6.5 8h2M6.5 11h2M11.5 8h2M11.5 11h2" /> },
 ];
 
 const admin = [
