@@ -64,7 +64,8 @@ const inv: Record<string, { id: string; invoiceNr: number; ocr: string; totalOre
 function upload(text: string, name: string) {
   return agent.post('/bank-files').attach('file', Buffer.from(text, 'latin1'), name);
 }
-const binary = (res: NodeJS.ReadableStream, cb: (err: Error | null, body: Buffer) => void) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const binary = (res: any, cb: (err: Error | null, body: any) => void) => {
   const chunks: Buffer[] = [];
   res.on('data', (c: Buffer) => chunks.push(c));
   res.on('end', () => cb(null, Buffer.concat(chunks)));
@@ -251,7 +252,7 @@ describe('inkasso', () => {
   it('exporterar en ärendefil för inkassobolaget', async () => {
     const x = await agent.get(`/collection-cases/export.xlsx?ids=${id.case}`).buffer(true).parse(binary).expect(200);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(x.body as Buffer);
+    await wb.xlsx.load(x.body as never);
     const ws = wb.getWorksheet('Inkassoärenden')!;
     expect(ws.getRow(1).getCell(3).value).toBe('Gäldenär');
     expect(ws.rowCount).toBe(4);
