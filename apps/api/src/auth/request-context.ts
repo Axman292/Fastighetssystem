@@ -23,6 +23,12 @@ export interface RequestContext {
   access: CompanyAccess[];
   /** Valt bolag, eller null när hela koncernen visas. */
   activeCompanyId: string | null;
+  /** sha256 av sessionens token, för att känna igen den aktuella sessionen. */
+  sessionTokenHash?: string;
+  mfaEnabled?: boolean;
+  /** Koncernen kräver tvåstegsverifiering och användaren har inte slagit på den än. */
+  mfaSetupRequired?: boolean;
+  sessionIdleMinutes?: number;
 }
 
 export type AuthedRequest = Request & { ctx?: RequestContext };
@@ -36,6 +42,10 @@ export const Ctx = createParamDecorator((_: unknown, host: ExecutionContext): Re
 export const PUBLIC_KEY = 'public';
 /** Markerar en route som öppen utan inloggning. */
 export const Public = () => SetMetadata(PUBLIC_KEY, true);
+
+export const MFA_SETUP_KEY = 'allow-during-mfa-setup';
+/** Route som får användas innan tvåstegsverifiering är uppsatt (när koncernen kräver det). */
+export const AllowDuringMfaSetup = () => SetMetadata(MFA_SETUP_KEY, true);
 
 /** Bolag som får läsas i anropet: valt bolag, eller alla i koncernvyn. */
 export function readableCompanyIds(ctx: RequestContext): string[] {
