@@ -15,6 +15,7 @@ interface BankFileRow {
   companyName: string;
   filename: string;
   bankgiro: string;
+  source?: 'upload' | 'auto';
   testFile: boolean;
   status: 'draft' | 'booked';
   paymentCount: number;
@@ -30,7 +31,7 @@ interface BankFileRow {
 type Tab = 'files' | 'todo' | 'unallocated' | 'payments';
 
 export default function PaymentsPage() {
-  const { active, can, version } = useSession();
+  const { me, active, can, version } = useSession();
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>('files');
@@ -81,18 +82,25 @@ export default function PaymentsPage() {
         title="Inbetalningar"
         description={
           active
-            ? `Läs in inbetalningsfilen från Bankgirot (BgMax) för ${active.companyName}. Betalningarna matchas mot fakturornas OCR-nummer.`
+            ? `Inbetalningsfiler från banken (camt.054, eller BgMax för äldre filer) för ${active.companyName}. Betalningarna matchas mot avierna på OCR-nummer.`
             : 'Välj ett bolag för att läsa in en bankfil. Här visas inbetalningar i hela koncernen.'
         }
         actions={
-          canWrite && (
+          <>
+            {me.user.isGroupAdmin && (
+              <Link href="/inbetalningar/automatisk">
+                <Button variant="secondary">Automatisk hämtning</Button>
+              </Link>
+            )}
+            {canWrite && (
             <>
-              <input ref={input} type="file" accept=".txt,.bgm,.bgmax,text/plain" className="hidden" onChange={(e) => choose(e.target.files?.[0])} />
+              <input ref={input} type="file" accept=".xml,.txt,.bgm,.bgmax,text/plain,application/xml,text/xml" className="hidden" onChange={(e) => choose(e.target.files?.[0])} />
               <Button onClick={() => input.current?.click()} disabled={busy}>
                 {busy ? 'Läser in…' : 'Läs in bankfil'}
               </Button>
             </>
-          )
+            )}
+          </>
         }
       />
       {error && (
@@ -128,7 +136,7 @@ export default function PaymentsPage() {
           head={['Fil', ...(active ? [] : ['Bolag']), 'Betalningsdag', 'Betalningar', 'Belopp', 'Inläst', 'Status']}
           empty={
             <>
-              Inga bankfiler ännu. Hämta filen <span className="font-medium">Bankgiro Inbetalningar (BgMax)</span> från internetbanken och läs in den här.
+              Inga bankfiler ännu. Slå på <span className="font-medium">Automatisk hämtning</span>, eller hämta inbetalningsfilen (camt.054) från internetbanken och läs in den här.
             </>
           }
         >
@@ -137,6 +145,7 @@ export default function PaymentsPage() {
               <Td className="font-medium">
                 <Link href={`/inbetalningar/${f.id}`}>{f.filename}</Link>
                 {f.testFile && <span className="ml-2 text-[12px] text-warn">testfil</span>}
+                {f.source === 'auto' && <span className="ml-2 text-[12px] text-ink-3">hämtad automatiskt</span>}
               </Td>
               {!active && <Td className="text-ink-2">{f.companyName}</Td>}
               <Td className="tabular text-ink-2">{f.paymentDate ?? '–'}</Td>
