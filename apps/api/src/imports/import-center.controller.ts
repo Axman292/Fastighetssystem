@@ -551,6 +551,8 @@ export class ImportCenterController {
       return await withContext(dbContext(ctx), async (_db, client) => {
         const b = await loadBatch(client, id);
         if (b.status !== 'committed') throw new BadRequestException('Bara en genomförd import kan ångras');
+        const purged = (await client.query('select purged_at from import_batch where id = $1', [id])).rows[0]?.purged_at;
+        if (purged) throw new BadRequestException('Importen har gallrats enligt dataskyddsinställningarna och kan inte längre ångras');
         await client.query('select 1 from import_batch where id = $1 for update', [id]);
         // Tillåter att just denna imports utfärdade fakturor tas bort
         await client.query(`select set_config('app.import_rollback', $1, true)`, [id]);

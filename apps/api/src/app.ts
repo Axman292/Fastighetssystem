@@ -34,6 +34,8 @@ import { ArticlesController } from './articles/articles.controller';
 import { RentAdjustmentsController } from './rent-adjustments/rent-adjustments.controller';
 import { ReportsController } from './reports/reports.controller';
 import { AccountingController } from './accounting/accounting.controller';
+import { GdprController } from './gdpr/gdpr.controller';
+import { GdprScheduler } from './gdpr/gdpr-scheduler';
 
 @Module({
   controllers: [
@@ -68,9 +70,11 @@ import { AccountingController } from './accounting/accounting.controller';
     RentAdjustmentsController,
     ReportsController,
     AccountingController,
+    GdprController,
   ],
   providers: [
     AuthService,
+    GdprScheduler,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DbErrorsFilter },
   ],
