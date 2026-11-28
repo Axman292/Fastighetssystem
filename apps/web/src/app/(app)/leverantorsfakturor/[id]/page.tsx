@@ -107,6 +107,7 @@ export default function SupplierInvoicePage({ params }: { params: Promise<{ id: 
           <Info label="Betalas till" value={inv.supplierBankgiro ? `Bankgiro ${inv.supplierBankgiro}` : inv.supplierPlusgiro ? `Plusgiro ${inv.supplierPlusgiro}` : '–'} />
           <Info label="Leverantör" value={<Link className="text-accent hover:underline" href={`/leverantorer/${inv.supplierId}`}>{inv.supplierName}</Link>} />
           <Info label="Beskrivning" value={inv.description ?? '–'} />
+          <Info label="Ärende" value={<LinkedWorkOrders supplierInvoiceId={inv.id} />} />
         </Card>
         <Card className="space-y-1.5 p-5 text-[13px]">
           <Row label="Belopp exkl. moms" value={fmtOre(inv.netOre, true)} />
@@ -372,5 +373,24 @@ function CancelDialog({ open, inv, onClose, onDone }: { open: boolean; inv: Supp
         </div>
       </form>
     </Dialog>
+  );
+}
+
+/** Felanmälningar och ärenden som fakturan är kopplad till som kostnad. */
+function LinkedWorkOrders({ supplierInvoiceId }: { supplierInvoiceId: string }) {
+  const [rows, setRows] = useState<{ id: string; orderNr: number; title: string }[] | null>(null);
+  useEffect(() => {
+    api<{ id: string; orderNr: number; title: string }[]>(`/work-orders/by-supplier-invoice/${supplierInvoiceId}`).then(setRows).catch(() => setRows([]));
+  }, [supplierInvoiceId]);
+  if (!rows) return null;
+  if (!rows.length) return <span className="text-ink-3">–</span>;
+  return (
+    <span className="flex flex-col">
+      {rows.map((r) => (
+        <Link key={r.id} href={`/arenden/${r.id}`} className="truncate text-accent hover:underline">
+          {r.orderNr} {r.title}
+        </Link>
+      ))}
+    </span>
   );
 }

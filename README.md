@@ -256,6 +256,18 @@ De visar bland annat att en förvaltare i ett bolag inte kan läsa eller skriva 
 
 Bestäms tillsammans med axel. Bokföringen förs över till Hogia med SIE-fil; en direktkoppling mot Hogias API väntar.
 
+## Felanmälan och ärenden
+
+- **Felanmälningsformulär per fastighet** under Felanmälan → Formulär och länkar. Varje fastighet får en egen länk och QR-kod (för anslag i trapphuset). Hyresgästen behöver inte logga in, väljer lägenhet, typ av fel, beskriver felet, bifogar upp till fem bilder och anger om huvudnyckel får användas.
+- **Spamskydd:** dolt fält för robotar, minsta ifyllnadstid med signerad biljett, högst fem anmälningar per IP-adress och timme (`FAULT_REPORTS_PER_IP`), längdgränser, bara bildfiler och spärr mot texter med många länkar. En länk kan bytas ut så att den gamla slutar fungera.
+- **Ärenden** med löpnummer per bolag, kategori, prioritet (akut, hög, normal, låg) med förslag på klart-datum, status (ny, hos hantverkare, pågår, väntar, åtgärdad, avslutad, makulerad), ansvarig handläggare och hantverkare ur leverantörsregistret. Ärenden kan också registreras för hand, till exempel efter ett samtal.
+- **Hyresgästen kopplas automatiskt** när e-post eller telefon stämmer med hyresgästen på objektet.
+- **Arbetsorder till hantverkaren** med e-post, bilderna bifogade och en egen länk där hantverkaren ser allt och kvitterar påbörjat eller utfört, med kommentar och bilder.
+- **Anmälaren följer ärendet** på en egen statussida och kan skriva till förvaltningen. Kommentarer kan vara interna, till anmälaren eller till hantverkaren.
+- **E-post:** besked om nya anmälningar till bolagets adresser och den ansvarige, kvittens till anmälaren, besked när ärendet påbörjas eller åtgärdas och arbetsordern till hantverkaren. Allt loggas i ärendet.
+- **Kostnader:** leverantörsfakturor kopplas till ärendet och jämförs med kostnadsramen. Fakturan visar vilket ärende den hör till.
+- **Dataskydd:** anmälarens namn, e-post, telefon och IP-adress gallras med hyresgästen, och för anmälningar utan hyresgäst när ärendet varit avslutat under lagringstiden. Felanmälningar finns med i registerutdraget.
+
 ## Lediga objekt och intresselista
 
 - **Lediga objekt** visar objekt som står lediga i dag och objekt som blir lediga när ett avtal sägs upp eller löper ut utan att ett nytt tar vid. Allt räknas fram ur avtalen. Per objekt visas ledigt sedan, antal dagar, hyra och förlorad hyra (månadshyra × 12 / 365 per dag), och överst uthyrningsgrad, hyresbortfall per månad och hittills i år.

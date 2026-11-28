@@ -23,6 +23,7 @@ export interface Extract {
   deliveries: Record<string, unknown>[];
   bankPayments: Record<string, unknown>[];
   documents: Record<string, unknown>[];
+  workOrders: Record<string, unknown>[];
   purposes: { purpose: string; legalBasis: string; data: string }[];
   retention: string[];
   recipients: string[];
@@ -91,6 +92,11 @@ export async function buildExtract(client: PoolClient, customerId: string): Prom
          or (d.entity_type = 'contract' and d.entity_id in (select id from contract where customer_id = c.id)))
      order by d.created_at`,
   );
+  const workOrders = await q(
+    `select w.order_nr as "orderNr", w.created_at::date::text as "createdAt", w.title, w.status,
+            w.reporter_name as "reporterName", w.reporter_email as "reporterEmail", w.reporter_phone as "reporterPhone"
+     from work_order w where w.customer_id = $1 order by w.created_at`,
+  );
   const s = await getSettings(client, c.companyId);
   const company = await companyInfo(client, c.companyId);
   const { companyId: _companyId, id: _id, ...customer } = c;
@@ -107,6 +113,7 @@ export async function buildExtract(client: PoolClient, customerId: string): Prom
     deliveries,
     bankPayments,
     documents,
+    workOrders,
     purposes: [
       {
         purpose: 'Administrera hyresförhållandet (avtal, objekt, in- och avflyttning, kontakt)',
@@ -123,6 +130,11 @@ export async function buildExtract(client: PoolClient, customerId: string): Prom
         legalBasis: 'Rättslig förpliktelse enligt bokföringslagen (artikel 6.1 c)',
         data: 'Fakturor, kreditfakturor, inbetalningar och återbetalningar med namn och adress',
       },
+      {
+        purpose: 'Felanmälan och underhåll (åtgärda fel i lägenheten eller fastigheten)',
+        legalBasis: 'Avtal (artikel 6.1 b)',
+        data: 'Namn, e-post, telefon, beskrivning av felet, bilder och om huvudnyckel får användas',
+      },
     ],
     retention: [
       `Uppgifterna i kundregistret anonymiseras ${s.retentionMonths} månader efter att hyresförhållandet upphört och allt är betalt.`,
@@ -135,6 +147,7 @@ export async function buildExtract(client: PoolClient, customerId: string): Prom
       'E-posttjänst som skickar avier och påminnelser för bolagets räkning (personuppgiftsbiträde).',
       'Leverantör av drift och lagring av systemet inom EU (personuppgiftsbiträde).',
       'Inkasso- eller kronofogdemyndighet om en skuld inte betalas.',
+      'Hantverkare som åtgärdar en felanmälan (namn, telefon och tillträde).',
     ],
     rights: [
       'Du har rätt att få rättat uppgifter som är fel.',
@@ -365,6 +378,15 @@ function draw(doc: Doc, e: Extract) {
     table(
       [{ t: 'Fil', w: w(0.6) }, { t: 'Sparad', w: w(0.2) }, { t: 'Sparas till', w: w(0.2) }],
       e.documents.map((d) => [String(d.fileName), String(d.createdAt), String(d.retainUntil ?? '')]),
+      '',
+    );
+  }
+
+  if (e.workOrders?.length) {
+    section('Felanmälningar');
+    table(
+      [{ t: 'Ärende', w: w(0.12) }, { t: 'Datum', w: w(0.16) }, { t: 'Fel', w: w(0.42) }, { t: 'Anmälare', w: w(0.3) }],
+      e.workOrders.map((x) => [String(x.orderNr), String(x.createdAt), String(x.title), [x.reporterName, x.reporterPhone, x.reporterEmail].filter(Boolean).join(', ')]),
       '',
     );
   }

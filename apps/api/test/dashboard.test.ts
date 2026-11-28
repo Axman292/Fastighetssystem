@@ -90,6 +90,8 @@ describe('startsidan', () => {
       return { key: 'test', label: 'Testtal', value: String(n), href: '/bolag' };
     });
     const d = await dashboard();
-    expect(d.extras).toEqual([{ key: 'test', label: 'Testtal', value: String(Object.keys(company).length), href: '/bolag' }]);
+    // Felanmälan registrerar också ett kort; här kontrolleras bara testets eget
+    expect(d.extras.find((e: { key: string }) => e.key === 'test')).toEqual({ key: 'test', label: 'Testtal', value: String(Object.keys(company).length), href: '/bolag' });
+    expect(d.extras.map((e: { key: string }) => e.key)).toContain('fault-reports');
   });
 });
